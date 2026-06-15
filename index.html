@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imperio Gardariam — Diario de Conquistas</title>
+  <meta name="description" content="El diario de conquistas de Javi y Mariam. Cada país, un territorio del Imperio.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://flagcdn.com">
+  <link rel="stylesheet" href="lib/leaflet.css?v=20260614">
+  <link rel="stylesheet" href="styles.css?v=20260614">
+</head>
+<body>
+
+  <!-- ── Splash ─────────────────────────────────────────────── -->
+  <div id="splash" aria-hidden="true">
+    <div class="splash-crest">⚜</div>
+    <div class="splash-name">Imperio Gardariam</div>
+    <div class="splash-ornament">
+      <div class="splash-line-h"></div>
+      <div class="splash-diamond"></div>
+      <div class="splash-line-h"></div>
+    </div>
+    <div class="splash-sub">Javi &amp; Mariam · El mundo, nuestro Imperio</div>
+  </div>
+
+  <!-- ── Nav ───────────────────────────────────────────────── -->
+  <nav id="nav">
+    <div class="nav-brand">
+      <span class="wordmark">⚜ Imperio Gardariam</span>
+      <span class="sub">Diario de Conquistas</span>
+    </div>
+
+    <div class="nav-tabs" role="tablist">
+      <button class="nav-tab active" data-view="map"         role="tab">Mapa</button>
+      <button class="nav-tab"        data-view="restaurants" role="tab">Gastronomía</button>
+      <button class="nav-tab"        data-view="photos"      role="tab">Fotos</button>
+      <button class="nav-tab"        data-view="videos"      role="tab">Vídeos</button>
+    </div>
+
+    <div class="nav-stats">
+      <div class="stat-block">
+        <span class="stat-num" id="stat-countries">9</span>
+        <span class="stat-lbl">Conquistas</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════
+       MAPA
+  ══════════════════════════════════════════════════════ -->
+  <section id="map-view" class="view active" role="tabpanel">
+    <div id="map"></div>
+
+    <div id="conquest-hud">
+      <span class="hud-icon">⚜</span>
+      <span class="hud-text"><strong id="hud-conquered">0</strong> / 195 territorios conquistados</span>
+    </div>
+
+    <p class="map-hint">Haz clic en cualquier territorio para conquistarlo</p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       GASTRONOMÍA
+  ══════════════════════════════════════════════════════ -->
+  <section id="restaurants-view" class="view" role="tabpanel">
+    <div class="view-header">
+      <h2 class="view-title">⚔ Gastronomía del Imperio</h2>
+      <div class="view-filters">
+        <select id="filter-country" class="filter-select">
+          <option value="all">Todos los territorios</option>
+        </select>
+        <select id="filter-rating" class="filter-select">
+          <option value="0">Todas las valoraciones</option>
+          <option value="4">★★★★ y superior</option>
+          <option value="5">★★★★★ únicamente</option>
+        </select>
+      </div>
+    </div>
+    <div id="restaurants-grid" class="restaurants-grid"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       FOTOS
+  ══════════════════════════════════════════════════════ -->
+  <section id="photos-view" class="view" role="tabpanel">
+    <div class="view-header">
+      <h2 class="view-title">⚜ Memoria del Imperio</h2>
+      <div class="view-filters">
+        <select id="filter-photo-country" class="filter-select">
+          <option value="all">Todos los territorios</option>
+        </select>
+      </div>
+    </div>
+    <div id="photos-grid" class="photos-masonry"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       VÍDEOS
+  ══════════════════════════════════════════════════════ -->
+  <section id="videos-view" class="view" role="tabpanel">
+    <div class="view-header">
+      <h2 class="view-title">▶ Crónicas del Imperio</h2>
+    </div>
+
+    <!-- Add video form -->
+    <form class="add-video-form" onsubmit="return false">
+      <span class="add-video-label">Nuevo vídeo</span>
+      <input  id="video-url-input"      class="add-video-input"  type="url"  placeholder="https://www.youtube.com/watch?v=...">
+      <input  id="video-title-input"    class="add-video-input"  type="text" placeholder="Título (opcional)" style="max-width:200px">
+      <select id="video-country-select" class="add-video-select">
+        <option value="">— País —</option>
+      </select>
+      <button id="add-video-btn" class="add-video-btn" type="button">Añadir</button>
+    </form>
+
+    <div id="videos-grid" class="videos-grid"></div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       PANEL DE DETALLE DEL TERRITORIO
+  ══════════════════════════════════════════════════════ -->
+  <aside id="detail-panel" aria-label="Detalle del territorio" aria-hidden="true">
+    <button class="panel-close" aria-label="Cerrar">✕</button>
+
+    <!-- Hero -->
+    <div class="panel-hero">
+      <img src="" alt="" loading="lazy">
+      <div class="panel-hero-overlay"></div>
+      <div class="panel-hero-meta">
+        <img class="panel-flag-img" src="" alt="">
+        <h2 class="panel-country-name"></h2>
+      </div>
+    </div>
+
+    <div class="panel-body">
+
+      <!-- Conquest controls -->
+      <div class="conquest-controls">
+        <button class="conquest-btn" data-status="none">Sin Conquista</button>
+        <button class="conquest-btn" data-status="partial">⚔ Parcial</button>
+        <button class="conquest-btn" data-status="full">⚜ Conquistado</button>
+      </div>
+
+      <!-- Regions -->
+      <div id="panel-regions"></div>
+
+      <!-- Visit details (only shown for countries in data.js) -->
+      <div id="panel-visits-section">
+        <div class="section-label" style="margin-top:8px">Expedición</div>
+        <div id="panel-visit-meta" class="visit-meta"></div>
+
+        <div class="panel-section" style="margin-bottom:18px">
+          <div class="section-label">Fotos</div>
+          <div id="panel-photos"></div>
+        </div>
+
+        <div class="panel-section" style="margin-bottom:18px">
+          <div class="section-label">Gastronomía</div>
+          <div id="panel-restaurants"></div>
+        </div>
+
+        <div class="panel-section" style="margin-bottom:8px">
+          <div class="section-label">Momentos clave</div>
+          <div id="panel-highlights"></div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ── Video Modal ────────────────────────────────────── -->
+  <div id="video-modal" role="dialog" aria-label="Reproducir vídeo" aria-modal="true">
+    <div class="video-modal-inner">
+      <button class="video-modal-close" aria-label="Cerrar vídeo">✕</button>
+      <div class="video-embed-wrapper">
+        <iframe id="yt-embed" src="" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Lightbox ───────────────────────────────────────── -->
+  <div id="lightbox" role="dialog" aria-label="Foto ampliada" aria-modal="true">
+    <button class="lightbox-close" aria-label="Cerrar">✕</button>
+    <img src="" alt="Foto del Imperio">
+  </div>
+
+  <!-- ── Scripts ────────────────────────────────────────── -->
+  <script src="lib/leaflet.js?v=20260614"  defer></script>
+  <script src="data.js?v=20260614"         defer></script>
+  <script src="main.js?v=20260614"         defer></script>
+
+</body>
+</html>
