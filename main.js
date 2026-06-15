@@ -5,10 +5,65 @@
   var map = null;
   var geoLayers = {};         // ISO → country layer
   var geoRegionLayers = {};   // 'IT_sicilia' → [layer, ...]
+  var battleMarkers = {};     // ISO → battle Leaflet marker
   var currentISO = null;
 
+  // ── Paint Mode state ──────────────────────────────────────────────────────
+  var isPaintMode = false;
+  var isPainting  = false;
+  var paintType   = 'conquer'; // 'conquer' | 'erase'
+
+  // ── Stripe animation ──────────────────────────────────────────────────────
+  var stripeAnimId = null;
+  var stripeOffset = 0;
+
+  function startStripeAnimation() {
+    if (stripeAnimId) return;
+    function tick() {
+      stripeOffset = (stripeOffset + 0.18) % 10;
+      var pat = document.getElementById('conquest-stripe');
+      if (pat) pat.setAttribute('patternTransform', 'rotate(45 0 0) translate(' + stripeOffset.toFixed(2) + ',0)');
+      stripeAnimId = requestAnimationFrame(tick);
+    }
+    stripeAnimId = requestAnimationFrame(tick);
+  }
+
+  function stopStripeAnimation() {
+    if (stripeAnimId) { cancelAnimationFrame(stripeAnimId); stripeAnimId = null; }
+    var pat = document.getElementById('conquest-stripe');
+    if (pat) pat.setAttribute('patternTransform', 'rotate(45 0 0)');
+  }
+
+  function updateStripeAnimation() {
+    var hasPartial = Object.keys(geoLayers).some(function(iso) { return getStatus(iso) === 'partial'; });
+    if (hasPartial) startStripeAnimation(); else stopStripeAnimation();
+  }
+
+  // ── Battle markers ────────────────────────────────────────────────────────
+  function updateBattleMarkers() {
+    Object.keys(battleMarkers).forEach(function(iso) {
+      try { battleMarkers[iso].remove(); } catch(e) {}
+      delete battleMarkers[iso];
+    });
+    Object.keys(geoLayers).forEach(function(iso) {
+      if (getStatus(iso) !== 'partial') return;
+      var layer = geoLayers[iso];
+      try {
+        var c = layer.getBounds().getCenter();
+        var icon = L.divIcon({
+          className: 'battle-marker-wrap',
+          html: '<div class="battle-marker">⚔</div>',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+        battleMarkers[iso] = L.marker([c.lat, c.lng], {
+          icon: icon, interactive: false, keyboard: false, zIndexOffset: 1500
+        }).addTo(map);
+      } catch(e) {}
+    });
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
-  function safe(fn, name) { try { fn(); } catch (e) { console.warn('[Gardariam]', name, e); } }
   function fmt(d) { return d ? new Date(d).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'}) : '—'; }
   function daysBetween(a, b) { return Math.round((new Date(b) - new Date(a)) / 86400000); }
   function stars(n) { return '★'.repeat(n) + '☆'.repeat(5-n); }
@@ -17,6 +72,7 @@
     return m ? m[1] : null;
   }
   function ytThumb(id) { return 'https://img.youtube.com/vi/' + id + '/hqdefault.jpg'; }
+  function safe(fn, name) { try { fn(); } catch(e) { console.warn('[Gardariam]', name, e); } }
 
   // ── Color ──────────────────────────────────────────────────────────────────
   var DEFAULT_COLOR = '#8b1a2a';
@@ -33,7 +89,6 @@
   }
   function rgba(hex, a) { var c=hexRgb(hex); return 'rgba('+c.r+','+c.g+','+c.b+','+a+')'; }
 
-  // Countries that have sub-region GeoJSON data in regions.geojson
   var REGION_COUNTRIES = { IT:1, ES:1, FR:1, TR:1, JP:1, ID:1 };
   function hasGeoRegions(iso) { return !!REGION_COUNTRIES[iso]; }
 
@@ -41,7 +96,7 @@
     var col = getConquestColor();
     return {
       none:    { fillColor:'#cf8d14', fillOpacity:0.92, color:'#e8aa20', weight:0.8 },
-      partial: { fillColor:'url(#conquest-stripe)', fillOpacity:1, color:col, weight:1.4 },
+      partial: { fillColor:'url(#conquest-stripe)', fillOpacity:1, color:col, weight:1.8 },
       full:    { fillColor:col, fillOpacity:1, color:lighten(col,55), weight:2 },
     };
   }
@@ -54,7 +109,6 @@
     };
   }
 
-  // For countries with GeoJSON sub-regions: use a very subtle base so regions show through
   function styleForISO(iso) {
     var st = getStatus(iso);
     if (hasGeoRegions(iso) && st !== 'none') {
@@ -66,17 +120,13 @@
   function styleForRegion(iso, regionId) {
     var conquered = isRegionConquered(iso, regionId);
     var col = getConquestColor();
-    if (conquered) {
-      return { fillColor:col, fillOpacity:0.96, color:lighten(col,55), weight:1.2 };
-    }
+    if (conquered) return { fillColor:col, fillOpacity:0.96, color:lighten(col,55), weight:1.2 };
     return { fillColor:'#cf8d14', fillOpacity:0.9, color:'rgba(200,144,40,0.35)', weight:0.5 };
   }
 
   function hoverStyleForRegion(iso, regionId) {
     var col = getConquestColor();
-    return isRegionConquered(iso, regionId) ?
-      { fillColor:lighten(col,28) } :
-      { fillColor:'#e09a28' };
+    return isRegionConquered(iso, regionId) ? { fillColor:lighten(col,28) } : { fillColor:'#e09a28' };
   }
 
   // ── Conquest state ─────────────────────────────────────────────────────────
@@ -112,8 +162,7 @@
   }
 
   function isRegionConquered(iso, regionId) {
-    var regs = getRegions(iso);
-    var r = regs.find(function(r){ return r.id===regionId; });
+    var r = getRegions(iso).find(function(r){ return r.id===regionId; });
     return r ? r.conquered : false;
   }
 
@@ -122,6 +171,37 @@
     if (!regs) return regionId;
     var r = regs.find(function(r){ return r.id===regionId; });
     return r ? r.name : regionId;
+  }
+
+  // ── Paint feature ─────────────────────────────────────────────────────────
+  var flagsDebounce = null;
+  function deferFlagsStrip() {
+    clearTimeout(flagsDebounce);
+    flagsDebounce = setTimeout(renderFlagsStrip, 250);
+  }
+
+  function paintFeature(iso, regionId) {
+    if (regionId) {
+      var regions = getRegions(iso).map(function(r) {
+        return r.id === regionId ? Object.assign({}, r, { conquered: paintType === 'conquer' }) : r;
+      });
+      var newStatus = computeStatus(regions);
+      setStatus(iso, newStatus, regions);
+      refreshRegionStyle(iso, regionId);
+      refreshMapStyle(iso);
+    } else {
+      var st = paintType === 'conquer' ? 'full' : 'none';
+      var regs = getRegions(iso).map(function(r) { return Object.assign({}, r, { conquered: st==='full' }); });
+      setStatus(iso, st, regs);
+      refreshMapStyle(iso);
+      refreshAllRegionStylesForCountry(iso);
+    }
+    renderHUD();
+    updateStats();
+    deferFlagsStrip();
+    updateBattleMarkers();
+    updateStripeAnimation();
+    if (currentISO === iso) { renderConquestControls(iso); renderRegions(iso); }
   }
 
   // ── Splash ────────────────────────────────────────────────────────────────
@@ -167,20 +247,19 @@
       setConquestColor(input.value);
       if (swatch) swatch.style.background = input.value;
       updateStripePattern();
-      // Refresh all non-none map layers
       Object.keys(geoLayers).forEach(function(iso){
         if (getStatus(iso)!=='none') refreshMapStyle(iso);
       });
-      // Refresh all region layers
       Object.keys(geoRegionLayers).forEach(function(key){
-        var parts = key.split('_'); var iso=parts[0], rid=parts.slice(1).join('_');
+        var idx = key.indexOf('_'), iso=key.slice(0,idx), rid=key.slice(idx+1);
         refreshRegionStyle(iso, rid);
       });
+      updateBattleMarkers();
     });
     if (swatch) swatch.addEventListener('click', function(){ input.click(); });
   }
 
-  // ── SVG Stripe Pattern for "Invadiendo" ───────────────────────────────────
+  // ── SVG Stripe Pattern ────────────────────────────────────────────────────
   function injectStripePattern() {
     var svg = document.querySelector('.leaflet-overlay-pane svg');
     if (!svg||svg.querySelector('#gardariam-defs')) return;
@@ -189,7 +268,7 @@
     defs.id = 'gardariam-defs';
     defs.innerHTML =
       '<pattern id="conquest-stripe" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45 0 0)">' +
-      '<rect x="0" y="0" width="5" height="10" fill="rgba('+c.r+','+c.g+','+c.b+',0.65)"/>' +
+      '<rect x="0" y="0" width="5" height="10" fill="rgba('+c.r+','+c.g+','+c.b+',0.7)"/>' +
       '</pattern>';
     svg.insertBefore(defs, svg.firstChild);
   }
@@ -198,13 +277,44 @@
     var defs = document.getElementById('gardariam-defs'); if (!defs) return;
     var col = getConquestColor(); var c = hexRgb(col);
     var rect = defs.querySelector('#conquest-stripe rect');
-    if (rect) rect.setAttribute('fill','rgba('+c.r+','+c.g+','+c.b+',0.65)');
+    if (rect) rect.setAttribute('fill','rgba('+c.r+','+c.g+','+c.b+',0.7)');
+  }
+
+  // ── Paint Mode ────────────────────────────────────────────────────────────
+  function initPaintMode() {
+    var btn = document.getElementById('paint-mode-btn');
+    if (!btn) return;
+
+    function exitPaintMode() {
+      isPaintMode = false; isPainting = false;
+      btn.innerHTML = '⚔ <span>Conquistar</span>';
+      btn.classList.remove('active');
+      var ct = document.getElementById('map-container');
+      if (ct) ct.classList.remove('paint-mode');
+      if (map) { map.dragging.enable(); map.scrollWheelZoom.enable(); }
+    }
+
+    btn.addEventListener('click', function() {
+      if (isPaintMode) { exitPaintMode(); return; }
+      isPaintMode = true;
+      btn.innerHTML = '✕ <span>Salir</span>';
+      btn.classList.add('active');
+      var ct = document.getElementById('map-container');
+      if (ct) ct.classList.add('paint-mode');
+      if (map) { map.dragging.disable(); map.scrollWheelZoom.disable(); }
+    });
+
+    // Map-level mousedown to start painting over background areas
+    // (features handle their own mousedown)
+    document.addEventListener('mouseup', function() { isPainting = false; });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && isPaintMode) exitPaintMode();
+    });
   }
 
   // ── Rich Tooltip ──────────────────────────────────────────────────────────
   function buildTooltipHtml(iso, name, countryStatus, regionId) {
     var flagUrl = 'https://flagcdn.com/w40/'+iso.toLowerCase()+'.png';
-    var stClass = countryStatus==='full'?'ct-full':countryStatus==='partial'?'ct-partial':'ct-none';
     var stLabel = countryStatus==='full'
       ? '<span class="ct-badge ct-full">⚜ Conquistado</span>'
       : countryStatus==='partial'
@@ -269,31 +379,46 @@
       var icon=L.divIcon({className:'',html:html,iconSize:[w,h],iconAnchor:[w/2,h/2]});
       L.marker([lat,lng],{icon:icon,interactive:false,keyboard:false,zIndexOffset:-2000}).addTo(map);
     }
-    mk(28,-38,SHIP_SVG,48,42);
-    mk(8,168,SHIP_SVG,48,42);
-    mk(-15,-25,SERPENT_SVG,70,30);
-    mk(-40,80,SERPENT_SVG,70,30);
-    mk(72,-18,CROSS_SVG,22,22);
-    mk(72,90,CROSS_SVG,22,22);
-    mk(-55,-80,CROSS_SVG,22,22);
+    mk(28,-38,SHIP_SVG,48,42); mk(8,168,SHIP_SVG,48,42);
+    mk(-15,-25,SERPENT_SVG,70,30); mk(-40,80,SERPENT_SVG,70,30);
+    mk(72,-18,CROSS_SVG,22,22); mk(72,90,CROSS_SVG,22,22); mk(-55,-80,CROSS_SVG,22,22);
   }
 
   function buildGeoLayer(data) {
     L.geoJSON(data, {
       style: function(f){ return styleForISO(f.properties.ISO_A2); },
       onEachFeature: function(f, layer){
-        var iso = f.properties.ISO_A2;
+        var iso  = f.properties.ISO_A2;
         var name = f.properties.ADMIN||f.properties.NAME||iso;
         geoLayers[iso] = layer;
+
         layer.bindTooltip(buildTooltipHtml(iso,name,getStatus(iso),null), {
           className:'country-tooltip-rich', sticky:true, direction:'top', offset:[0,-8], opacity:1
         });
-        layer.on('mouseover', function(e){
+
+        // Paint mode: mousedown starts a paint session
+        layer.on('mousedown', function(e) {
+          if (!isPaintMode) return;
+          if (hasGeoRegions(iso)) return; // region countries handled by region layer
+          L.DomEvent.stopPropagation(e);
+          isPainting = true;
+          paintType = getStatus(iso) !== 'full' ? 'conquer' : 'erase';
+          paintFeature(iso, null);
+        });
+
+        layer.on('mouseover', function(e) {
+          if (isPaintMode) {
+            if (isPainting && !hasGeoRegions(iso)) paintFeature(iso, null);
+            return; // suppress tooltip in paint mode
+          }
           layer.setTooltipContent(buildTooltipHtml(iso,name,getStatus(iso),null));
           e.target.setStyle(Object.assign({},styleForISO(iso),hoverStyles()[getStatus(iso)]));
         });
-        layer.on('mouseout',  function(e){ e.target.setStyle(styleForISO(iso)); });
+        layer.on('mouseout', function(e){
+          if (!isPaintMode) e.target.setStyle(styleForISO(iso));
+        });
         layer.on('click', function(){
+          if (isPaintMode) return;
           openPanel(iso,name);
           try { map.flyToBounds(layer.getBounds(),{padding:[60,60],duration:1,maxZoom:6}); }catch(_){}
         });
@@ -301,6 +426,8 @@
     }).addTo(map);
     injectStripePattern();
     renderHUD();
+    updateBattleMarkers();
+    updateStripeAnimation();
   }
 
   // ── Regions layer ─────────────────────────────────────────────────────────
@@ -321,15 +448,33 @@
         if (!geoRegionLayers[key]) geoRegionLayers[key]=[];
         geoRegionLayers[key].push(layer);
         var countryName = (T.countries[iso]&&T.countries[iso].name)||iso;
+
         layer.bindTooltip(buildTooltipHtml(iso,countryName,getStatus(iso),rid), {
           className:'country-tooltip-rich', sticky:true, direction:'top', offset:[0,-8], opacity:1
         });
-        layer.on('mouseover', function(e){
+
+        // Paint mode: mousedown starts a paint session on this region
+        layer.on('mousedown', function(e) {
+          if (!isPaintMode) return;
+          L.DomEvent.stopPropagation(e);
+          isPainting = true;
+          paintType = !isRegionConquered(iso,rid) ? 'conquer' : 'erase';
+          paintFeature(iso, rid);
+        });
+
+        layer.on('mouseover', function(e) {
+          if (isPaintMode) {
+            if (isPainting) paintFeature(iso, rid);
+            return; // suppress tooltip in paint mode
+          }
           layer.setTooltipContent(buildTooltipHtml(iso,countryName,getStatus(iso),rid));
           e.target.setStyle(hoverStyleForRegion(iso,rid));
         });
-        layer.on('mouseout', function(e){ e.target.setStyle(styleForRegion(iso,rid)); });
-        layer.on('click', function(e){
+        layer.on('mouseout', function(e) {
+          if (!isPaintMode) e.target.setStyle(styleForRegion(iso,rid));
+        });
+        layer.on('click', function(e) {
+          if (isPaintMode) return;
           L.DomEvent.stopPropagation(e);
           openPanel(iso, countryName);
           var baseLayer = geoLayers[iso];
@@ -342,21 +487,17 @@
   function refreshMapStyle(iso) {
     var layer=geoLayers[iso]; if (!layer) return;
     layer.setStyle(styleForISO(iso));
+    var st=getStatus(iso);
     var name=layer.feature&&(layer.feature.properties.ADMIN||layer.feature.properties.NAME||iso);
-    var status=getStatus(iso);
-    layer.setTooltipContent(buildTooltipHtml(iso,name,status,null));
+    layer.setTooltipContent(buildTooltipHtml(iso,name,st,null));
   }
 
   function refreshRegionStyle(iso, rid) {
-    var key=iso+'_'+rid;
-    var layers=geoRegionLayers[key]; if (!layers) return;
+    var layers=geoRegionLayers[iso+'_'+rid]; if (!layers) return;
     layers.forEach(function(l){ l.setStyle(styleForRegion(iso,rid)); });
   }
 
   function refreshAllRegionStylesForCountry(iso) {
-    var regions=getRegions(iso);
-    regions.forEach(function(r){ refreshRegionStyle(iso,r.id); });
-    // Also refresh any region keys that start with this iso
     Object.keys(geoRegionLayers).forEach(function(key){
       if (key.indexOf(iso+'_')===0){ var rid=key.slice(iso.length+1); refreshRegionStyle(iso,rid); }
     });
@@ -450,8 +591,10 @@
     var newStatus=computeStatus(regions);
     setStatus(iso, newStatus, regions);
     renderConquestControls(iso); renderRegions(iso);
-    refreshMapStyle(iso); refreshAllRegionStylesForCountry(iso);
+    refreshMapStyle(iso); refreshRegionStyle(iso, regionId);
+    refreshAllRegionStylesForCountry(iso);
     renderHUD(); updateStats(); renderFlagsStrip();
+    updateBattleMarkers(); updateStripeAnimation();
   }
 
   function renderVisitDetails(data, idx) {
@@ -493,6 +636,7 @@
         renderConquestControls(currentISO); renderRegions(currentISO);
         refreshMapStyle(currentISO); refreshAllRegionStylesForCountry(currentISO);
         renderHUD(); updateStats(); renderFlagsStrip();
+        updateBattleMarkers(); updateStripeAnimation();
       });
     });
   }
@@ -518,12 +662,12 @@
     grid.querySelectorAll('.fs-item').forEach(function(item){
       item.addEventListener('click', function(){
         var iso=item.dataset.iso;
-        var cur=getStatus(iso);
-        var newSt=cur==='none'?'full':'none';
+        var newSt=getStatus(iso)==='none'?'full':'none';
         var regions=getRegions(iso).map(function(r){ return Object.assign({},r,{conquered:newSt==='full'}); });
         setStatus(iso,newSt,regions);
         refreshMapStyle(iso); refreshAllRegionStylesForCountry(iso);
         renderHUD(); updateStats(); renderFlagsStrip();
+        updateBattleMarkers(); updateStripeAnimation();
         if (currentISO===iso){ renderConquestControls(iso); renderRegions(iso); }
       });
     });
@@ -620,16 +764,13 @@
     var u=document.getElementById('video-url-input'); if (u) u.addEventListener('keydown',function(e){ if(e.key==='Enter') btn.click(); });
   }
 
-  // ── Video modal ───────────────────────────────────────────────────────────
+  // ── Modals ────────────────────────────────────────────────────────────────
   function openVideoModal(ytId){ var m=document.getElementById('video-modal'); document.getElementById('yt-embed').src='https://www.youtube-nocookie.com/embed/'+ytId+'?autoplay=1&rel=0'; m.classList.add('open'); }
   function closeVideoModal(){ var m=document.getElementById('video-modal'); m.classList.remove('open'); setTimeout(function(){ document.getElementById('yt-embed').src=''; },300); }
   function initVideoModal(){ var m=document.getElementById('video-modal'); if (!m) return; m.addEventListener('click',function(e){ if(e.target===m) closeVideoModal(); }); var b=m.querySelector('.video-modal-close'); if (b) b.addEventListener('click',closeVideoModal); }
-
-  // ── Lightbox ──────────────────────────────────────────────────────────────
   function openLightbox(src){ var lb=document.getElementById('lightbox'); lb.querySelector('img').src=src; lb.classList.add('open'); }
   function closeLightbox(){ var lb=document.getElementById('lightbox'); lb.classList.remove('open'); setTimeout(function(){ lb.querySelector('img').src=''; },300); }
   function initLightbox(){ var lb=document.getElementById('lightbox'); if (!lb) return; lb.addEventListener('click',function(e){ if(e.target===lb) closeLightbox(); }); var b=lb.querySelector('.lightbox-close'); if (b) b.addEventListener('click',closeLightbox); }
-
   function initPanelClose(){
     var btn=document.querySelector('.panel-close'); if (btn) btn.addEventListener('click',closePanel);
     document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeLightbox(); closeVideoModal(); closePanel(); } });
@@ -641,6 +782,7 @@
     safe(initNav,             'nav');
     safe(initColorPicker,     'color-picker');
     safe(initMap,             'map');
+    safe(initPaintMode,       'paint-mode');
     safe(initConquestBtns,    'conquest-btns');
     safe(initPanelClose,      'panel-close');
     safe(initLightbox,        'lightbox');
