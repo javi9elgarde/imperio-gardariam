@@ -56,17 +56,57 @@
     <div id="map-container">
       <div id="map"></div>
 
-      <!-- Color picker widget (floating over the map) -->
+      <!-- Country selector dropdown (top-left) -->
+      <div id="country-dropdown-widget">
+        <select id="country-map-select" aria-label="Seleccionar territorio">
+          <option value="">⚜ Explorar territorio…</option>
+        </select>
+      </div>
+
+      <!-- Color picker widget (top-right) -->
       <div id="color-picker-widget" title="Color de conquista">
         <span class="cp-label">Color conquista</span>
         <div id="color-swatch"></div>
         <input id="conquest-color-input" type="color" value="#8b1a2a" aria-label="Elige el color de conquista">
       </div>
 
+      <!-- Compass rose (bottom-right, above zoom) -->
+      <div id="compass-rose" aria-hidden="true">
+        <svg viewBox="0 0 84 84" xmlns="http://www.w3.org/2000/svg" width="72" height="72">
+          <circle cx="42" cy="42" r="39" fill="none" stroke="rgba(200,144,40,0.18)" stroke-width="0.9"/>
+          <circle cx="42" cy="42" r="34" fill="none" stroke="rgba(200,144,40,0.08)" stroke-width="0.5"/>
+          <!-- N arm (gold) -->
+          <polygon points="42,5 45.5,40 42,46 38.5,40" fill="#d4991a" opacity="0.75"/>
+          <!-- S arm (darker) -->
+          <polygon points="42,79 45.5,44 42,38 38.5,44" fill="#7a5010" opacity="0.65"/>
+          <!-- E arm -->
+          <polygon points="79,42 44,38.5 38,42 44,45.5" fill="#9a6818" opacity="0.65"/>
+          <!-- W arm -->
+          <polygon points="5,42 40,38.5 46,42 40,45.5" fill="#9a6818" opacity="0.65"/>
+          <!-- NE -->
+          <polygon points="72,12 46,40 42,38 46,35" fill="#c89028" opacity="0.22"/>
+          <!-- NW -->
+          <polygon points="12,12 38,40 42,38 38,35" fill="#c89028" opacity="0.22"/>
+          <!-- SE -->
+          <polygon points="72,72 46,44 42,46 46,49" fill="#c89028" opacity="0.18"/>
+          <!-- SW -->
+          <polygon points="12,72 38,44 42,46 38,49" fill="#c89028" opacity="0.18"/>
+          <!-- Center -->
+          <circle cx="42" cy="42" r="6" fill="#06090f" stroke="#c89028" stroke-width="1.4" opacity="0.88"/>
+          <circle cx="42" cy="42" r="2.8" fill="#d4991a" opacity="0.9"/>
+          <!-- Labels -->
+          <text x="42" y="19" text-anchor="middle" dominant-baseline="middle" font-family="Cinzel,serif" font-size="9" font-weight="700" fill="#f0c030" opacity="0.9">N</text>
+          <text x="42" y="67" text-anchor="middle" dominant-baseline="middle" font-family="Cinzel,serif" font-size="8" fill="#c89028" opacity="0.6">S</text>
+          <text x="70" y="42" text-anchor="middle" dominant-baseline="middle" font-family="Cinzel,serif" font-size="8" fill="#c89028" opacity="0.6">E</text>
+          <text x="14" y="42" text-anchor="middle" dominant-baseline="middle" font-family="Cinzel,serif" font-size="8" fill="#c89028" opacity="0.6">O</text>
+        </svg>
+      </div>
+
       <!-- HUD -->
       <div id="conquest-hud">
         <span class="hud-icon">⚜</span>
         <span class="hud-text"><strong id="hud-conquered">0</strong> / 195 territorios conquistados</span>
+        <button id="scroll-to-flags-btn">↓ Ver banderas</button>
       </div>
 
       <p class="map-hint">Haz clic en cualquier territorio para conquistarlo</p>
