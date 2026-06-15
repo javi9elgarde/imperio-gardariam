@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://flagcdn.com">
-  <link rel="stylesheet" href="lib/leaflet.css?v=20260614">
-  <link rel="stylesheet" href="styles.css?v=20260614">
+  <link rel="stylesheet" href="lib/leaflet.css?v=20260615">
+  <link rel="stylesheet" href="styles.css?v=20260615">
 </head>
 <body>
 
@@ -41,7 +41,7 @@
 
     <div class="nav-stats">
       <div class="stat-block">
-        <span class="stat-num" id="stat-countries">9</span>
+        <span class="stat-num" id="stat-countries">0</span>
         <span class="stat-lbl">Conquistas</span>
       </div>
     </div>
@@ -51,14 +51,36 @@
        MAPA
   ══════════════════════════════════════════════════════ -->
   <section id="map-view" class="view active" role="tabpanel">
-    <div id="map"></div>
 
-    <div id="conquest-hud">
-      <span class="hud-icon">⚜</span>
-      <span class="hud-text"><strong id="hud-conquered">0</strong> / 195 territorios conquistados</span>
+    <!-- Map container (fixed viewport height) -->
+    <div id="map-container">
+      <div id="map"></div>
+
+      <!-- Color picker widget (floating over the map) -->
+      <div id="color-picker-widget" title="Color de conquista">
+        <span class="cp-label">Color conquista</span>
+        <div id="color-swatch"></div>
+        <input id="conquest-color-input" type="color" value="#8b1a2a" aria-label="Elige el color de conquista">
+      </div>
+
+      <!-- HUD -->
+      <div id="conquest-hud">
+        <span class="hud-icon">⚜</span>
+        <span class="hud-text"><strong id="hud-conquered">0</strong> / 195 territorios conquistados</span>
+      </div>
+
+      <p class="map-hint">Haz clic en cualquier territorio para conquistarlo</p>
     </div>
 
-    <p class="map-hint">Haz clic en cualquier territorio para conquistarlo</p>
+    <!-- Flags strip (scrolls below the map) -->
+    <div id="flags-strip">
+      <div class="fs-header">
+        <span class="fs-title">⚔ Banderas del Imperio</span>
+        <span class="fs-counter" id="fs-counter">0 / 195 conquistados</span>
+      </div>
+      <div id="flags-strip-grid"></div>
+    </div>
+
   </section>
 
   <!-- ══════════════════════════════════════════════════════
@@ -187,9 +209,9 @@
   </div>
 
   <!-- ── Scripts ────────────────────────────────────────── -->
-  <script src="lib/leaflet.js?v=20260614"  defer></script>
-  <script src="data.js?v=20260614"         defer></script>
-  <script src="main.js?v=20260614"         defer></script>
+  <script src="lib/leaflet.js?v=20260615"  defer></script>
+  <script src="data.js?v=20260615"         defer></script>
+  <script src="main.js?v=20260615"         defer></script>
 
 </body>
 </html>
