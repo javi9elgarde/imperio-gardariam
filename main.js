@@ -12,6 +12,8 @@
   var map = null;
   var geoLayers    = {};   // ISO → Leaflet layer
   var battleMarkers = {};  // ISO → Leaflet marker
+  var spainCCAALayer = null;
+  var SPAIN_CCAA_ZOOM = 4.25; // zoom threshold to show autonomous communities
 
   var currentISO   = null; // panel open for this country
 
@@ -436,7 +438,7 @@
     addGraticule();
     fetch('lib/countries.geojson?v=20260615')
       .then(function(r){ return r.json(); })
-      .then(function(data){ buildGeoLayer(data); addDecorations(); })
+      .then(function(data){ buildGeoLayer(data); addDecorations(); initSpainCCAA(); })
       .catch(function(e){ console.warn('[Gardariam] GeoJSON failed',e); });
   }
 
@@ -449,6 +451,47 @@
       lines.push({type:'Feature',geometry:{type:'LineString',coordinates:[[-180,lat],[180,lat]]},properties:{}});
     });
     L.geoJSON({type:'FeatureCollection',features:lines},{style:{color:'rgba(200,160,20,0.13)',weight:0.7,opacity:1,fill:false,interactive:false}}).addTo(map);
+  }
+
+  /* ── Spain CCAA layer ───────────────────────────── */
+  function initSpainCCAA(){
+    fetch('lib/spain-ccaa-simple.geojson?v=20260615')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        spainCCAALayer=L.geoJSON(data,{
+          style:function(){ return {
+            fillColor:'#000000',
+            fillOpacity:0.001,
+            color:'rgba(200,144,40,0.55)',
+            weight:1.4,
+            dashArray:'4,3',
+            interactive:true
+          };},
+          onEachFeature:function(f,layer){
+            var n=f.properties.name||'';
+            layer.bindTooltip(
+              '<div class="ccaa-tip">'+n+'</div>',
+              {className:'ccaa-tip-wrap',sticky:true,direction:'top',offset:[0,-6],opacity:1}
+            );
+            layer.on('mouseover',function(){ layer.setStyle({color:'rgba(240,192,48,0.85)',weight:2,dashArray:''}); });
+            layer.on('mouseout', function(){ layer.setStyle({color:'rgba(200,144,40,0.55)',weight:1.4,dashArray:'4,3'}); });
+            layer.on('click',function(){ openPanel('ES','España'); });
+          }
+        });
+        updateCCAAVisibility();
+        map.on('zoom', updateCCAAVisibility);
+        map.on('zoomend', updateCCAAVisibility);
+      })
+      .catch(function(e){ console.warn('[Gardariam] CCAA failed',e); });
+  }
+
+  function updateCCAAVisibility(){
+    if (!spainCCAALayer||!map) return;
+    if (map.getZoom()>=SPAIN_CCAA_ZOOM){
+      if (!map.hasLayer(spainCCAALayer)) spainCCAALayer.addTo(map);
+    } else {
+      if (map.hasLayer(spainCCAALayer)) map.removeLayer(spainCCAALayer);
+    }
   }
 
   var SHIP_SVG='<svg viewBox="0 0 48 42" xmlns="http://www.w3.org/2000/svg" width="48" height="42"><line x1="24" y1="3" x2="24" y2="28" stroke="rgba(210,148,24,0.4)" stroke-width="1.2"/><polygon points="24,5 38,22 10,22" fill="rgba(210,148,24,0.18)" stroke="rgba(210,148,24,0.3)" stroke-width="0.8"/><polygon points="24,10 33,22 15,22" fill="rgba(210,148,24,0.1)"/><path d="M8,28 Q24,36 40,28 L38,28 Q24,34 10,28 Z" fill="rgba(210,148,24,0.28)"/></svg>';

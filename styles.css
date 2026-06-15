@@ -370,6 +370,11 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 .lightbox-close{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border-gold);color:var(--text-2);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
 .lightbox-close:hover{color:var(--gold-bright);border-color:var(--gold);}
 
+/* ── Spain CCAA tooltips ─────────────────── */
+.ccaa-tip-wrap{background:rgba(7,11,23,0.92) !important;border:1px solid rgba(200,144,40,0.4) !important;border-radius:6px !important;padding:5px 12px !important;pointer-events:none !important;white-space:nowrap !important;box-shadow:0 8px 24px rgba(0,0,0,.7) !important;backdrop-filter:blur(10px);}
+.ccaa-tip-wrap::before{display:none !important;}
+.ccaa-tip{font-family:'Cinzel',serif;font-size:.68rem;font-weight:600;letter-spacing:.14em;color:var(--gold-bright);text-transform:uppercase;}
+
 /* ── Responsive ──────────────────────────── */
 @media(max-width:900px){
   :root{--panel-w:100vw;}
