@@ -436,9 +436,9 @@
     map.setMaxBounds(L.latLngBounds([[-78,-182],[86,184]]));
     map.on('resize',function(){ map.fitBounds(worldB,{animate:false,padding:[0,0]}); map.setMinZoom(map.getZoom()); });
     addGraticule();
-    fetch('lib/countries.geojson?v=20260615')
+    fetch('lib/countries.geojson?v=20260616')
       .then(function(r){ return r.json(); })
-      .then(function(data){ buildGeoLayer(data); addDecorations(); initSpainCCAA(); })
+      .then(function(data){ buildGeoLayer(data); initPhysicalLayers(); addDecorations(); initSpainCCAA(); })
       .catch(function(e){ console.warn('[Gardariam] GeoJSON failed',e); });
   }
 
@@ -494,6 +494,51 @@
     }
   }
 
+  /* ── Physical layers (rivers + lakes) ────────── */
+  function initPhysicalLayers(){
+    fetch('lib/rivers.geojson?v=20260616')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        L.geoJSON(data,{
+          style:function(f){
+            var sr=f.properties.scalerank||4;
+            return {color:'rgba(80,110,195,0.48)',weight:sr<=2?1.4:0.75,opacity:1,fill:false,interactive:false};
+          }
+        }).addTo(map);
+      }).catch(function(){});
+    fetch('lib/lakes.geojson?v=20260616')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        L.geoJSON(data,{
+          style:function(){
+            return {fillColor:'rgba(55,80,160,0.42)',fillOpacity:1,color:'rgba(75,110,195,0.5)',weight:0.6,interactive:false};
+          }
+        }).addTo(map);
+      }).catch(function(){});
+  }
+
+  /* ── Terrain SVG decorations ──────────────────── */
+  var MTN_SVG='<svg viewBox="0 0 62 28" xmlns="http://www.w3.org/2000/svg" width="62" height="28"><polygon points="31,2 50,26 12,26" fill="rgba(140,108,68,0.22)" stroke="rgba(168,128,76,0.36)" stroke-width="0.9"/><polygon points="16,9 30,26 2,26" fill="rgba(130,100,62,0.17)" stroke="rgba(158,118,72,0.28)" stroke-width="0.7"/><polygon points="46,10 61,26 31,26" fill="rgba(130,100,62,0.17)" stroke="rgba(158,118,72,0.28)" stroke-width="0.7"/><line x1="29" y1="12" x2="33" y2="12" stroke="rgba(220,195,160,0.22)" stroke-width="1.2" stroke-linecap="round"/></svg>';
+  var FOR_SVG='<svg viewBox="0 0 46 24" xmlns="http://www.w3.org/2000/svg" width="46" height="24"><polygon points="10,3 18,21 2,21" fill="rgba(18,72,18,0.3)" stroke="rgba(28,92,28,0.42)" stroke-width="0.8"/><polygon points="23,1 33,21 13,21" fill="rgba(18,72,18,0.36)" stroke="rgba(28,92,28,0.48)" stroke-width="0.9"/><polygon points="36,3 45,21 27,21" fill="rgba(18,72,18,0.3)" stroke="rgba(28,92,28,0.42)" stroke-width="0.8"/></svg>';
+  var DES_SVG='<svg viewBox="0 0 54 17" xmlns="http://www.w3.org/2000/svg" width="54" height="17"><path d="M2,13 Q11,4 20,13 Q29,22 38,13 Q46,4 52,13" fill="none" stroke="rgba(195,142,42,0.36)" stroke-width="1.3" stroke-linecap="round"/><path d="M5,7 Q13,2 21,7 Q30,12 38,7 Q45,2 51,7" fill="none" stroke="rgba(195,142,42,0.24)" stroke-width="0.9" stroke-linecap="round"/><circle cx="15" cy="5" r="1.2" fill="rgba(200,158,55,0.28)"/><circle cx="37" cy="5" r="1.2" fill="rgba(200,158,55,0.28)"/></svg>';
+
+  function addTerrainDecorations(){
+    function mk(lat,lng,html,w,h){
+      var icon=L.divIcon({className:'',html:html,iconSize:[w,h],iconAnchor:[w/2,h/2]});
+      L.marker([lat,lng],{icon:icon,interactive:false,keyboard:false,zIndexOffset:-3000}).addTo(map);
+    }
+    // Mountain ranges
+    [[46.5,10],[42.7,1.5],[31.5,-3.5],[63,14],[60.5,59],[42.5,44],[29,84.5],
+     [5,-74],[-22,-68],[-40,-72.5],[51,-116],[10,37.5],[-29,29.5],[36,69],[42,77]
+    ].forEach(function(p){ mk(p[0],p[1],MTN_SVG,62,28); });
+    // Forests
+    [[-4,-61],[-1,24],[5,110],[1,114],[60,65],[62,122],[56,-95],[65,22]
+    ].forEach(function(p){ mk(p[0],p[1],FOR_SVG,46,24); });
+    // Deserts
+    [[22,-5],[25,22],[22,46],[42,105],[-26,131],[-43,-67],[-24,21],[32,57.5],[26,72],[41,-115]
+    ].forEach(function(p){ mk(p[0],p[1],DES_SVG,54,17); });
+  }
+
   var SHIP_SVG='<svg viewBox="0 0 48 42" xmlns="http://www.w3.org/2000/svg" width="48" height="42"><line x1="24" y1="3" x2="24" y2="28" stroke="rgba(210,148,24,0.4)" stroke-width="1.2"/><polygon points="24,5 38,22 10,22" fill="rgba(210,148,24,0.18)" stroke="rgba(210,148,24,0.3)" stroke-width="0.8"/><polygon points="24,10 33,22 15,22" fill="rgba(210,148,24,0.1)"/><path d="M8,28 Q24,36 40,28 L38,28 Q24,34 10,28 Z" fill="rgba(210,148,24,0.28)"/></svg>';
   var SERPENT_SVG='<svg viewBox="0 0 70 30" xmlns="http://www.w3.org/2000/svg" width="70" height="30"><path d="M5,18 Q12,8 22,16 Q32,24 42,14 Q52,4 62,12" fill="none" stroke="rgba(210,148,24,0.25)" stroke-width="2.5" stroke-linecap="round"/><circle cx="63" cy="11" r="4" fill="rgba(210,148,24,0.2)" stroke="rgba(210,148,24,0.3)" stroke-width="0.8"/><line x1="65" y1="9" x2="68" y2="7" stroke="rgba(210,148,24,0.3)" stroke-width="1" stroke-linecap="round"/><line x1="65" y1="9" x2="69" y2="10" stroke="rgba(210,148,24,0.3)" stroke-width="1" stroke-linecap="round"/></svg>';
   var CROSS_SVG='<svg viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg" width="22" height="22"><line x1="11" y1="2" x2="11" y2="20" stroke="rgba(210,148,24,0.22)" stroke-width="1.5"/><line x1="2" y1="11" x2="20" y2="11" stroke="rgba(210,148,24,0.22)" stroke-width="1.5"/><circle cx="11" cy="11" r="2.5" fill="rgba(210,148,24,0.28)"/></svg>';
@@ -506,6 +551,7 @@
     mk(28,-38,SHIP_SVG,48,42); mk(8,168,SHIP_SVG,48,42);
     mk(-15,-25,SERPENT_SVG,70,30); mk(-40,80,SERPENT_SVG,70,30);
     mk(72,-18,CROSS_SVG,22,22); mk(72,90,CROSS_SVG,22,22); mk(-55,-80,CROSS_SVG,22,22);
+    addTerrainDecorations();
   }
 
   function buildGeoLayer(data){
