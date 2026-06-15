@@ -13,7 +13,9 @@
   var geoLayers    = {};   // ISO → Leaflet layer
   var battleMarkers = {};  // ISO → Leaflet marker
   var spainCCAALayer = null;
-  var SPAIN_CCAA_ZOOM = 4.25; // zoom threshold to show autonomous communities
+  var SPAIN_CCAA_ZOOM = 4.25;
+  var capitalsLayer  = null;
+  var CAPITALS_ZOOM  = 4.5;
 
   var currentISO   = null; // panel open for this country
 
@@ -438,7 +440,7 @@
     addGraticule();
     fetch('lib/countries.geojson?v=20260616')
       .then(function(r){ return r.json(); })
-      .then(function(data){ buildGeoLayer(data); initPhysicalLayers(); addDecorations(); initSpainCCAA(); })
+      .then(function(data){ buildGeoLayer(data); initPhysicalLayers(); addDecorations(); initSpainCCAA(); initCapitals(); })
       .catch(function(e){ console.warn('[Gardariam] GeoJSON failed',e); });
   }
 
@@ -491,6 +493,38 @@
       if (!map.hasLayer(spainCCAALayer)) spainCCAALayer.addTo(map);
     } else {
       if (map.hasLayer(spainCCAALayer)) map.removeLayer(spainCCAALayer);
+    }
+  }
+
+  /* ── Capital cities ──────────────────────────────── */
+  function initCapitals(){
+    fetch('lib/capitals.geojson?v=20260616')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        capitalsLayer=L.geoJSON(data,{
+          pointToLayer:function(f,latlng){
+            var name=f.properties.name||'';
+            var icon=L.divIcon({
+              className:'',
+              html:'<div class="cap-mk"><div class="cap-dot"></div><span class="cap-nm">'+name+'</span></div>',
+              iconSize:[0,0],
+              iconAnchor:[3,3]
+            });
+            return L.marker(latlng,{icon:icon,interactive:false,keyboard:false,zIndexOffset:800});
+          }
+        });
+        updateCapitalsVisibility();
+        map.on('zoom',    updateCapitalsVisibility);
+        map.on('zoomend', updateCapitalsVisibility);
+      }).catch(function(e){ console.warn('[Gardariam] Capitals failed',e); });
+  }
+
+  function updateCapitalsVisibility(){
+    if (!capitalsLayer||!map) return;
+    if (map.getZoom()>=CAPITALS_ZOOM){
+      if (!map.hasLayer(capitalsLayer)) capitalsLayer.addTo(map);
+    } else {
+      if (map.hasLayer(capitalsLayer)) map.removeLayer(capitalsLayer);
     }
   }
 

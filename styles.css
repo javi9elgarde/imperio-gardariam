@@ -370,6 +370,26 @@ body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font
 .lightbox-close{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border-gold);color:var(--text-2);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
 .lightbox-close:hover{color:var(--gold-bright);border-color:var(--gold);}
 
+/* ── Capital city markers ────────────────── */
+.cap-mk{display:flex;align-items:center;gap:4px;pointer-events:none;white-space:nowrap;}
+.cap-dot{
+  width:6px;height:6px;flex-shrink:0;
+  background:rgba(240,198,48,0.88);
+  border:1px solid rgba(255,222,60,0.95);
+  transform:rotate(45deg);
+  border-radius:1px;
+  box-shadow:0 0 5px rgba(240,198,48,0.55),0 0 10px rgba(240,198,48,0.2);
+}
+.cap-nm{
+  font-family:'Cinzel',serif;
+  font-size:6.5px;
+  font-weight:600;
+  letter-spacing:0.07em;
+  text-transform:uppercase;
+  color:rgba(246,212,58,0.92);
+  text-shadow:0 0 3px #000,0 0 6px #000,0 1px 0 #000,1px 0 0 #000,-1px 0 0 #000;
+}
+
 /* ── Spain CCAA tooltips ─────────────────── */
 .ccaa-tip-wrap{background:rgba(7,11,23,0.92) !important;border:1px solid rgba(200,144,40,0.4) !important;border-radius:6px !important;padding:5px 12px !important;pointer-events:none !important;white-space:nowrap !important;box-shadow:0 8px 24px rgba(0,0,0,.7) !important;backdrop-filter:blur(10px);}
 .ccaa-tip-wrap::before{display:none !important;}
