@@ -457,7 +457,7 @@
 
   /* ── Spain CCAA layer ───────────────────────────── */
   function initSpainCCAA(){
-    fetch('lib/spain-ccaa-simple.geojson?v=20260615')
+    fetch('lib/spain-ccaa-simple.geojson?v=20260616')
       .then(function(r){ return r.json(); })
       .then(function(data){
         spainCCAALayer=L.geoJSON(data,{
