@@ -184,9 +184,11 @@
     if (!paintCanvas) return;
     paintCtx=paintCanvas.getContext('2d');
     syncCanvasSize();
-    map.on('move',   redrawCanvas);
-    map.on('zoom',   redrawCanvas);
-    map.on('resize', syncCanvasSize);
+    map.on('move',      redrawCanvas);
+    map.on('zoom',      redrawCanvas);
+    map.on('zoomstart', function(){ if(paintCtx) paintCtx.clearRect(0,0,paintCanvas.width,paintCanvas.height); });
+    map.on('zoomend',   redrawCanvas);
+    map.on('resize',    syncCanvasSize);
 
     paintCanvas.addEventListener('mousedown', onPaintDown);
     paintCanvas.addEventListener('mousemove', onPaintMove);
@@ -204,15 +206,49 @@
     redrawCanvas();
   }
 
+  /* Build a 2D canvas clip path from a country's GeoJSON geometry */
+  function applyCountryClip(ctx, iso){
+    var layer=geoLayers[iso];
+    if (!layer||!layer.feature) return;
+    var geom=layer.feature.geometry;
+    ctx.beginPath();
+    if (geom.type==='Polygon'){
+      geomRingsToPath(ctx,geom.coordinates);
+    } else if (geom.type==='MultiPolygon'){
+      geom.coordinates.forEach(function(poly){ geomRingsToPath(ctx,poly); });
+    }
+    try{ ctx.clip('evenodd'); }catch(e){ ctx.clip(); }
+  }
+
+  function geomRingsToPath(ctx, rings){
+    rings.forEach(function(ring){
+      if (!ring||ring.length===0) return;
+      var f=map.latLngToContainerPoint(L.latLng(ring[0][1],ring[0][0]));
+      ctx.moveTo(f.x,f.y);
+      for (var i=1;i<ring.length;i++){
+        var p=map.latLngToContainerPoint(L.latLng(ring[i][1],ring[i][0]));
+        ctx.lineTo(p.x,p.y);
+      }
+      ctx.closePath();
+    });
+  }
+
   function redrawCanvas(){
     if (!paintCtx||!map) return;
     paintCtx.clearRect(0,0,paintCanvas.width,paintCanvas.height);
     var d=loadPaint();
     Object.keys(d).forEach(function(iso){
+      if (!d[iso]||d[iso].length===0) return;
+      paintCtx.save();
+      if (iso!=='_') applyCountryClip(paintCtx,iso);
       d[iso].forEach(function(stroke){ drawStroke(stroke); });
+      paintCtx.restore();
     });
     if (isPainting && activeStroke.length>0){
+      paintCtx.save();
+      if (currentISO && currentISO!=='_') applyCountryClip(paintCtx,currentISO);
       drawStroke({color:getColor(),weight:BRUSH_PX[currentBrush],zoom:map.getZoom(),eraser:isEraseMode,points:activeStroke});
+      paintCtx.restore();
     }
   }
 
@@ -386,6 +422,7 @@
       minZoom:1,maxZoom:9,
       maxBoundsViscosity:1.0,
       zoomSnap:0.25,
+      zoomAnimation:false,
       bounceAtZoomLimits:false,
       zoomControl:true,
       worldCopyJump:false,
