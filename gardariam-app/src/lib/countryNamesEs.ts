@@ -215,7 +215,6 @@ export const COUNTRY_NAMES_ES: Record<string, string> = {
   PN: "Islas Pitcairn",
   SH: "Santa Elena",
   TC: "Islas Turcas y Caicos",
-  TO: "Tonga",
   AS: "Samoa Americana",
   AQ: "Antártida",
   IO: "Territorio Británico del Océano Índico",
