@@ -20,6 +20,7 @@ import {
 import type { ConquestStatus, PaintStroke } from "@/lib/types";
 import { BASE_PATH } from "@/lib/basePath";
 import { playFanfare } from "@/lib/sound";
+import { getNameEs, getCapitalNameEs } from "@/lib/countryNamesEs";
 
 const BRUSH_PX = [9, 24, 52];
 const SPAIN_CCAA_ZOOM = 4.25;
@@ -67,23 +68,23 @@ function lighten(hex: string, amt: number) {
 
 function styleFor(status: ConquestStatus, color: string): L.PathOptions {
   if (status === "full")
-    return { fillColor: color, fillOpacity: 1, color: lighten(color, 55), weight: 2 };
+    return { fillColor: color, fillOpacity: 1, color: lighten(color, 40), weight: 1.8 };
   if (status === "partial")
-    return { fillColor: "#cf8d14", fillOpacity: 0.92, color, weight: 1.8 };
-  return { fillColor: "#cf8d14", fillOpacity: 0.92, color: "#e8aa20", weight: 0.8 };
+    return { fillColor: "#b85c28", fillOpacity: 0.85, color: "#8a3e18", weight: 1.6 };
+  return { fillColor: "#dcc99a", fillOpacity: 1, color: "#9a7a50", weight: 0.8 };
 }
 function hoverFor(status: ConquestStatus, color: string): L.PathOptions {
   if (status === "full") return { fillColor: lighten(color, 28), color: lighten(color, 70) };
-  if (status === "partial") return { fillColor: "#e09a28", color: lighten(color, 40) };
-  return { fillColor: "#e09a28", color: "#f5bc30" };
+  if (status === "partial") return { fillColor: "#cc6a32", color: "#9a4820" };
+  return { fillColor: "#c8a870", color: "#7a5a30" };
 }
 function imperialStyleFor(status: ConquestStatus, color: string): L.PathOptions {
   if (status === "none")
-    return { fillColor: "#0d1322", fillOpacity: 0.78, color: "rgba(255,255,255,0.06)", weight: 0.5 };
+    return { fillColor: "#c8ae80", fillOpacity: 0.88, color: "rgba(120,85,45,0.35)", weight: 0.5 };
   return {
-    fillColor: status === "full" ? color : "#cf8d14",
+    fillColor: status === "full" ? color : "#b85c28",
     fillOpacity: 1,
-    color: lighten(color, 70),
+    color: lighten(color, 60),
     weight: 2.4,
   };
 }
@@ -97,12 +98,6 @@ function tooltipHtml(iso: string, name: string, status: ConquestStatus) {
   return `<div class="ct-header"><img class="ct-flag" src="https://flagcdn.com/w80/${iso.toLowerCase()}.png" alt="${iso}"><span class="ct-name">${name}</span></div>${badge}`;
 }
 
-const MTN_SVG =
-  '<svg viewBox="0 0 62 28" xmlns="http://www.w3.org/2000/svg" width="62" height="28"><polygon points="31,2 50,26 12,26" fill="rgba(140,108,68,0.22)" stroke="rgba(168,128,76,0.36)" stroke-width="0.9"/><polygon points="16,9 30,26 2,26" fill="rgba(130,100,62,0.17)" stroke="rgba(158,118,72,0.28)" stroke-width="0.7"/><polygon points="46,10 61,26 31,26" fill="rgba(130,100,62,0.17)" stroke="rgba(158,118,72,0.28)" stroke-width="0.7"/></svg>';
-const FOR_SVG =
-  '<svg viewBox="0 0 46 24" xmlns="http://www.w3.org/2000/svg" width="46" height="24"><polygon points="10,3 18,21 2,21" fill="rgba(18,72,18,0.3)" stroke="rgba(28,92,28,0.42)" stroke-width="0.8"/><polygon points="23,1 33,21 13,21" fill="rgba(18,72,18,0.36)" stroke="rgba(28,92,28,0.48)" stroke-width="0.9"/><polygon points="36,3 45,21 27,21" fill="rgba(18,72,18,0.3)" stroke="rgba(28,92,28,0.42)" stroke-width="0.8"/></svg>';
-const DES_SVG =
-  '<svg viewBox="0 0 54 17" xmlns="http://www.w3.org/2000/svg" width="54" height="17"><path d="M2,13 Q11,4 20,13 Q29,22 38,13 Q46,4 52,13" fill="none" stroke="rgba(195,142,42,0.36)" stroke-width="1.3" stroke-linecap="round"/><path d="M5,7 Q13,2 21,7 Q30,12 38,7 Q45,2 51,7" fill="none" stroke="rgba(195,142,42,0.24)" stroke-width="0.9" stroke-linecap="round"/></svg>';
 
 const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
   function ImperialMap(
@@ -523,12 +518,6 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       const resizeObserver = new ResizeObserver(() => syncCanvasSize());
       if (containerRef.current) resizeObserver.observe(containerRef.current);
 
-      // Decorations
-      function addDecoration(lat: number, lng: number, html: string, w: number, h: number) {
-        const icon = L.divIcon({ className: "", html, iconSize: [w, h], iconAnchor: [w / 2, h / 2] });
-        L.marker([lat, lng], { icon, interactive: false, keyboard: false, zIndexOffset: -3000 }).addTo(map);
-      }
-
       async function loadEverything() {
         // Countries
         const countriesRes = await fetch(`${BASE_PATH}/geo/countries.geojson`);
@@ -540,7 +529,8 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
           onEachFeature: (f, layer) => {
             const feature = f as unknown as CountryFeature;
             const iso = feature.properties.ISO_A2;
-            const name = feature.properties.ADMIN || feature.properties.NAME || iso;
+            const fallback = feature.properties.ADMIN || feature.properties.NAME || iso;
+            const name = getNameEs(iso, fallback);
             s.current.geoLayers[iso] = layer as L.Polygon;
             s.current.geoGeometries[iso] = feature.geometry;
             s.current.allCountries.push({ iso, name });
@@ -585,41 +575,6 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         updateBattleMarkers();
         redrawCanvas();
 
-        // Rivers + lakes
-        fetch(`${BASE_PATH}/geo/rivers.geojson`)
-          .then((r) => r.json())
-          .then((data) => {
-            if (disposed) return;
-            L.geoJSON(data, {
-              style: (f) => {
-                const sr = f?.properties?.scalerank ?? 4;
-                return { color: "rgba(80,110,195,0.48)", weight: sr <= 2 ? 1.4 : 0.75, opacity: 1, fill: false, interactive: false };
-              },
-            }).addTo(map);
-          })
-          .catch(() => {});
-        fetch(`${BASE_PATH}/geo/lakes.geojson`)
-          .then((r) => r.json())
-          .then((data) => {
-            if (disposed) return;
-            L.geoJSON(data, {
-              style: () => ({ fillColor: "rgba(55,80,160,0.42)", fillOpacity: 1, color: "rgba(75,110,195,0.5)", weight: 0.6, interactive: false }),
-            }).addTo(map);
-          })
-          .catch(() => {});
-
-        // Terrain decorations
-        if (disposed) return;
-        [
-          [46.5, 10], [42.7, 1.5], [31.5, -3.5], [63, 14], [60.5, 59], [42.5, 44], [29, 84.5],
-          [5, -74], [-22, -68], [-40, -72.5], [51, -116], [10, 37.5], [-29, 29.5], [36, 69], [42, 77],
-        ].forEach(([lat, lng]) => addDecoration(lat, lng, MTN_SVG, 62, 28));
-        [
-          [-4, -61], [-1, 24], [5, 110], [1, 114], [60, 65], [62, 122], [56, -95], [65, 22],
-        ].forEach(([lat, lng]) => addDecoration(lat, lng, FOR_SVG, 46, 24));
-        [
-          [22, -5], [25, 22], [22, 46], [42, 105], [-26, 131], [-43, -67], [-24, 21], [32, 57.5], [26, 72], [41, -115],
-        ].forEach(([lat, lng]) => addDecoration(lat, lng, DES_SVG, 54, 17));
 
         // Spain provinces (zoom-dependent)
         fetch(`${BASE_PATH}/geo/spain-ccaa-simple.geojson`)
@@ -675,7 +630,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
             if (disposed) return;
             const capitalsLayer = L.geoJSON(data, {
               pointToLayer: (f, latlng) => {
-                const name = f.properties?.name || "";
+                const name = getCapitalNameEs(f.properties?.name || "");
                 const icon = L.divIcon({
                   className: "",
                   html: `<div class="cap-mk"><div class="cap-dot"></div><span class="cap-nm">${name}</span></div>`,

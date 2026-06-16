@@ -52,12 +52,12 @@ export default function FlagRoom({ onSelectCountry }: FlagRoomProps) {
                   viewport={{ once: true }}
                   transition={{ duration: 0.3, delay: Math.min(i * 0.004, 0.4) }}
                   whileHover={visited ? { scale: 1.14, y: -3 } : { scale: 1.03 }}
-                  className={`relative flex flex-col items-center justify-center rounded-md border p-1.5 transition-colors ${
+                  className={`flag-tip relative flex flex-col items-center justify-center rounded-md border p-1.5 transition-colors ${
                     visited
                       ? "border-imperial-gold/35 bg-imperial-gold/5 shadow-[0_0_10px_rgba(200,144,40,0.15)]"
                       : "border-white/5 bg-imperial-charcoal-3"
                   }`}
-                  title={c.name}
+                  data-tip={c.name}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

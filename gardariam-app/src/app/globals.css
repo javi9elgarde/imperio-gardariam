@@ -98,8 +98,27 @@ body {
 
 /* ── Leaflet overrides ───────────────────────────── */
 .map-root .leaflet-container {
-  background: var(--color-imperial-charcoal) !important;
+  background: #4aabb0 !important;
   cursor: crosshair;
+}
+
+/* Parchment vignette */
+.map-root::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 90% 80% at 50% 50%,
+    transparent 50%,
+    rgba(80, 52, 20, 0.22) 100%
+  );
+  pointer-events: none;
+  z-index: 435;
+}
+
+/* Vintage sepia tone on all map layers */
+.map-root .leaflet-pane {
+  filter: sepia(0.12) saturate(0.88) brightness(1.02);
 }
 .map-root .leaflet-tile-pane {
   display: none;
@@ -269,11 +288,11 @@ body {
   width: 6px;
   height: 6px;
   flex-shrink: 0;
-  background: rgba(240, 198, 48, 0.88);
-  border: 1px solid rgba(255, 222, 60, 0.95);
+  background: rgba(80, 48, 18, 0.9);
+  border: 1px solid rgba(60, 36, 10, 0.95);
   transform: rotate(45deg);
   border-radius: 1px;
-  box-shadow: 0 0 5px rgba(240, 198, 48, 0.55);
+  box-shadow: 0 0 4px rgba(60, 36, 10, 0.4);
 }
 .cap-nm {
   font-family: var(--font-display), serif;
@@ -281,8 +300,8 @@ body {
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(246, 212, 58, 0.92);
-  text-shadow: 0 0 3px #000, 0 0 6px #000, 0 1px 0 #000;
+  color: rgba(55, 32, 10, 0.92);
+  text-shadow: 0 0 3px rgba(220, 190, 130, 0.7), 0 1px 0 rgba(220, 190, 130, 0.4);
 }
 
 /* ── Annexation burst (conquest animation) ───────── */
@@ -353,7 +372,7 @@ body {
 
 /* ── Vista Imperial atmosphere ────────────────────── */
 .map-root.imperial-view .leaflet-container {
-  background: #03050a !important;
+  background: #2e8088 !important;
 }
 .map-root.imperial-view::after {
   content: "";
@@ -366,4 +385,52 @@ body {
   );
   pointer-events: none;
   z-index: 410;
+}
+
+/* ── Flag room tooltip ──────────────────────────────── */
+.flag-tip {
+  position: relative;
+}
+.flag-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: rgba(7, 11, 23, 0.97);
+  border: 1px solid rgba(200, 144, 40, 0.55);
+  border-radius: 7px;
+  padding: 5px 11px;
+  font-family: var(--font-display), serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-parchment);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 60;
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(200, 144, 40, 0.12) inset;
+}
+.flag-tip::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  border: 5px solid transparent;
+  border-top-color: rgba(200, 144, 40, 0.55);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 60;
+}
+.flag-tip:hover::after,
+.flag-tip:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }

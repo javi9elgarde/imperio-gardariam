@@ -1,4 +1,5 @@
 import { BASE_PATH } from "./basePath";
+import { getNameEs } from "./countryNamesEs";
 
 export interface CountryInfo {
   iso: string;
@@ -31,9 +32,10 @@ export function loadCountriesList(): Promise<CountryInfo[]> {
         const iso = f.properties.ISO_A2;
         if (!iso || seen.has(iso)) continue;
         seen.add(iso);
+        const fallback = f.properties.ADMIN || f.properties.NAME || iso;
         list.push({
           iso,
-          name: f.properties.ADMIN || f.properties.NAME || iso,
+          name: getNameEs(iso, fallback),
           continent: f.properties.CONTINENT || "",
         });
       }
