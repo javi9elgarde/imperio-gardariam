@@ -40,18 +40,18 @@ export default function Hero() {
         transition={{ duration: 1.3, ease: EASE }}
         className="relative z-10"
         style={{
-          width: "clamp(160px, 22vw, 240px)",
-          borderRadius: "50%",
+          width: "clamp(180px, 24vw, 260px)",
+          borderRadius: "18px",
           overflow: "hidden",
-          boxShadow: "0 0 60px rgba(200,144,40,0.25), 0 0 0 2px rgba(200,144,40,0.35)",
+          boxShadow: "0 0 80px rgba(200,144,40,0.3), 0 0 0 1px rgba(200,144,40,0.4)",
         }}
       >
         <Image
           src="/logo.png"
           alt="Imperio Gardariam"
-          width={240}
-          height={240}
-          style={{ width: "100%", height: "auto", display: "block", filter: "brightness(0.92)" }}
+          width={260}
+          height={260}
+          style={{ width: "100%", height: "auto", display: "block" }}
         />
       </motion.div>
 
