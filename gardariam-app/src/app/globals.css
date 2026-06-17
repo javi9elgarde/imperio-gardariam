@@ -128,8 +128,9 @@ body {
   z-index: 411;
 }
 
-/* Vintage sepia tone on all map layers */
-.map-root .leaflet-pane {
+/* Vintage sepia tone on all map layers — same filter on canvas so paint strokes match */
+.map-root .leaflet-pane,
+.map-root canvas {
   filter: sepia(0.12) saturate(0.88) brightness(1.02);
 }
 .map-root .leaflet-tile-pane {

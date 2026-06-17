@@ -816,8 +816,8 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
             width: "100%",
             height: "100%",
             zIndex: 411,
-            opacity: 0.16,
-            mixBlendMode: "overlay",
+            opacity: 0.28,
+            mixBlendMode: "soft-light",
             pointerEvents: "none",
           }}
         >
