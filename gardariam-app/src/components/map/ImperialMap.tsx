@@ -332,9 +332,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         ctx.globalAlpha = 1;
       } else {
         ctx.globalCompositeOperation = "source-over";
-        ctx.globalAlpha = 0.82;
-        ctx.shadowColor = stroke.color;
-        ctx.shadowBlur = w * 0.25;
+        ctx.globalAlpha = 1;
       }
       ctx.strokeStyle = stroke.color;
       ctx.fillStyle = stroke.color;
