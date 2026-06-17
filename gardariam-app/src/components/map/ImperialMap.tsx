@@ -375,17 +375,22 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         ctx.restore();
       });
 
-      // Province conquest state — drawn on canvas at ALL zoom levels so
-      // conquered provinces remain visible when Spain is shown as one unit
+      // Province conquest state on canvas.
+      // At low zoom (provinces GeoJSON hidden): canvas fills "full" provinces with
+      // 100% opaque conquest color so they're visible over the parchment ES layer.
+      // At high zoom (provinces GeoJSON visible): GeoJSON handles "full" fill —
+      // canvas only draws paint strokes, avoiding double-render with the SVG filter.
+      const provincesVisible = map.getZoom() >= SPAIN_CCAA_ZOOM;
       s.current.provinceKeys.forEach((iso) => {
         const status = getStatus(iso);
         const strokes = getStrokes(iso);
-        if (status === "none" && strokes.length === 0) return;
+        const needsFill = status === "full" && !provincesVisible;
+        if (!needsFill && strokes.length === 0) return;
         ctx.save();
         applyCountryClip(ctx, map, iso);
-        if (status === "full") {
+        if (needsFill) {
           ctx.globalCompositeOperation = "source-over";
-          ctx.globalAlpha = 0.88;
+          ctx.globalAlpha = 1.0;
           ctx.fillStyle = getConquestColor();
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
