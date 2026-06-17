@@ -11,6 +11,8 @@ interface HudBarProps {
   onColorChange: (hex: string) => void;
   imperialView: boolean;
   onToggleImperialView: () => void;
+  iconBarOpen: boolean;
+  onToggleIconBar: () => void;
 }
 
 export default function HudBar({
@@ -20,6 +22,8 @@ export default function HudBar({
   onColorChange,
   imperialView,
   onToggleImperialView,
+  iconBarOpen,
+  onToggleIconBar,
 }: HudBarProps) {
   const [muted, setMuted] = useState(() => isSoundMuted());
 
@@ -72,6 +76,17 @@ export default function HudBar({
         }`}
       >
         ⚜ Vista Imperial
+      </button>
+      <button
+        onClick={onToggleIconBar}
+        title="Iconos en el mapa"
+        className={`font-display rounded-full border px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] transition-colors ${
+          iconBarOpen
+            ? "border-imperial-gold bg-imperial-gold/20 text-imperial-gold-bright"
+            : "border-white/10 text-parchment-faint hover:border-imperial-gold/40"
+        }`}
+      >
+        ✦ Iconos
       </button>
     </div>
   );

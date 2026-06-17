@@ -2,6 +2,7 @@ import {
   ConquestStatus,
   CountryData,
   EMPTY_COUNTRY_DATA,
+  IconMarker,
   PaintStroke,
 } from "./types";
 
@@ -12,6 +13,7 @@ const KEYS = {
   paint: "gardariam_next_paint_v1",
   countryData: "gardariam_next_country_data_v1",
   color: "gardariam_next_color_v1",
+  icons: "gardariam_next_icons_v1",
 } as const;
 
 function readJSON<T>(key: string, fallback: T): T {
@@ -95,4 +97,20 @@ export function getConquestColor(): string {
 
 export function setConquestColor(color: string): void {
   writeJSON(KEYS.color, color);
+}
+
+/* ── Icon markers ───────────────────────────────── */
+export function getIconMarkers(): IconMarker[] {
+  return readJSON(KEYS.icons, []);
+}
+
+export function addIconMarker(marker: IconMarker): void {
+  const markers = getIconMarkers();
+  markers.push(marker);
+  writeJSON(KEYS.icons, markers);
+}
+
+export function removeIconMarker(id: string): void {
+  const markers = getIconMarkers().filter((m) => m.id !== id);
+  writeJSON(KEYS.icons, markers);
 }

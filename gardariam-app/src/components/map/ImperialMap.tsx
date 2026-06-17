@@ -9,15 +9,18 @@ import {
   useRef,
 } from "react";
 import {
+  addIconMarker,
   addStroke,
   clearStrokes,
   getConquestColor,
+  getIconMarkers,
   getStatus,
   getStrokes,
+  removeIconMarker as removeIconMarkerFromStorage,
   setConquestColor,
   setStatus as saveStatus,
 } from "@/lib/storage";
-import type { ConquestStatus, PaintStroke } from "@/lib/types";
+import type { ConquestStatus, IconType, PaintStroke } from "@/lib/types";
 import { BASE_PATH } from "@/lib/basePath";
 import { playFanfare } from "@/lib/sound";
 import { getNameEs, getCapitalNameEs } from "@/lib/countryNamesEs";
@@ -25,6 +28,23 @@ import { getNameEs, getCapitalNameEs } from "@/lib/countryNamesEs";
 const BRUSH_PX = [9, 24, 52];
 const SPAIN_CCAA_ZOOM = 4.25;
 const CAPITALS_ZOOM = 4.5;
+
+const ICON_EMOJIS: Record<string, string> = {
+  battle: "⚔",
+  next: "🏴",
+  interest: "⭐",
+  danger: "💀",
+  explore: "🔭",
+  alliance: "🤝",
+};
+
+export interface HoverData {
+  iso: string;
+  name: string;
+  status: ConquestStatus;
+  x: number;
+  y: number;
+}
 
 export interface ImperialMapHandle {
   setCountryStatus: (iso: string, status: ConquestStatus) => void;
@@ -35,6 +55,7 @@ export interface ImperialMapHandle {
   setBrushSize: (index: number) => void;
   toggleEraseMode: () => boolean;
   toggleImperialView: () => boolean;
+  setIconMode: (type: string | null) => void;
 }
 
 interface ImperialMapProps {
@@ -42,6 +63,7 @@ interface ImperialMapProps {
   onConqueredCountChange: (count: number) => void;
   onWorldLoaded: (totalCountries: number) => void;
   onAnnex?: (iso: string, name: string) => void;
+  onHover?: (data: HoverData | null) => void;
 }
 
 interface SimpleGeometry {
@@ -65,43 +87,39 @@ function lighten(hex: string, amt: number) {
   const c = hexRgb(hex);
   return `rgb(${Math.min(c.r + amt, 255)},${Math.min(c.g + amt, 255)},${Math.min(c.b + amt, 255)})`;
 }
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}
 
+// partial: returns same style as none — the canvas paint layer shows the conquest color on top
 function styleFor(status: ConquestStatus, color: string): L.PathOptions {
   if (status === "full")
     return { fillColor: color, fillOpacity: 1, color: lighten(color, 40), weight: 1.8 };
-  if (status === "partial")
-    return { fillColor: "#b85c28", fillOpacity: 0.85, color: "#8a3e18", weight: 1.6 };
   return { fillColor: "#dcc99a", fillOpacity: 1, color: "#9a7a50", weight: 0.8 };
 }
 function hoverFor(status: ConquestStatus, color: string): L.PathOptions {
   if (status === "full") return { fillColor: lighten(color, 28), color: lighten(color, 70) };
-  if (status === "partial") return { fillColor: "#cc6a32", color: "#9a4820" };
   return { fillColor: "#c8a870", color: "#7a5a30" };
 }
 function imperialStyleFor(status: ConquestStatus, color: string): L.PathOptions {
-  if (status === "none")
+  if (status === "none" || status === "partial")
     return { fillColor: "#c8ae80", fillOpacity: 0.88, color: "rgba(120,85,45,0.35)", weight: 0.5 };
-  return {
-    fillColor: status === "full" ? color : "#b85c28",
-    fillOpacity: 1,
-    color: lighten(color, 60),
-    weight: 2.4,
-  };
-}
-function tooltipHtml(iso: string, name: string, status: ConquestStatus) {
-  const badge =
-    status === "full"
-      ? '<span class="ct-badge ct-full">⚜ Conquistado</span>'
-      : status === "partial"
-        ? '<span class="ct-badge ct-partial">⚔ Invadiendo</span>'
-        : '<span class="ct-badge ct-none">Sin conquistar</span>';
-  return `<div class="ct-header"><img class="ct-flag" src="https://flagcdn.com/w80/${iso.toLowerCase()}.png" alt="${iso}"><span class="ct-name">${name}</span></div>${badge}`;
+  return { fillColor: color, fillOpacity: 1, color: lighten(color, 60), weight: 2.4 };
 }
 
+function iconHtml(type: string, id: string): string {
+  const emoji = ICON_EMOJIS[type] || "📍";
+  return `<div class="map-icon-wrap icon-${type}" data-icon-id="${id}" title="Click para eliminar"><div class="map-icon-inner">${emoji}</div></div>`;
+}
 
 const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
   function ImperialMap(
-    { onSelectCountry, onConqueredCountChange, onWorldLoaded, onAnnex },
+    { onSelectCountry, onConqueredCountChange, onWorldLoaded, onAnnex, onHover },
     ref,
   ) {
     const mapDivRef = useRef<HTMLDivElement>(null);
@@ -113,9 +131,11 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       map: null as L.Map | null,
       geoLayers: {} as Record<string, L.Polygon>,
       geoGeometries: {} as Record<string, SimpleGeometry>,
-      battleMarkers: {} as Record<string, L.Marker>,
+      iconMarkerLayers: {} as Record<string, L.Marker>,
       allCountries: [] as { iso: string; name: string }[],
-      spainLayer: null as L.GeoJSON | null,
+      provinceKeys: [] as string[],
+      provinceNames: {} as Record<string, string>,
+      spainProvinceLayer: null as L.GeoJSON | null,
       capitalsLayer: null as L.GeoJSON | null,
       ctx: null as CanvasRenderingContext2D | null,
       isPaintMode: false,
@@ -125,15 +145,14 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       activeStroke: [] as [number, number][],
       currentPaintIso: null as string | null,
       imperialView: false,
+      iconMode: null as string | null,
     });
 
     function recomputeConqueredCount() {
-      const total = s.current.allCountries.length;
       const count = s.current.allCountries.filter(
         (c) => getStatus(c.iso) !== "none",
       ).length;
       onConqueredCountChange(count);
-      return total;
     }
 
     function refreshStyle(iso: string) {
@@ -141,13 +160,59 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       if (!layer) return;
       const status = getStatus(iso);
       const color = getConquestColor();
+
+      // Spain base layer: hide when provinces are visible
+      if (iso === "ES" && s.current.map && s.current.map.getZoom() >= SPAIN_CCAA_ZOOM) {
+        layer.setStyle({ fillOpacity: 0, color: "rgba(0,0,0,0)", weight: 0 });
+        return;
+      }
+
+      // Province layers: parchment fill + gold border
+      if (iso.startsWith("ES-")) {
+        layer.setStyle({
+          ...styleFor(status, color),
+          color: "rgba(200,144,40,0.55)",
+          dashArray: status === "none" ? "4,3" : "",
+          weight: 1.4,
+        });
+        return;
+      }
+
       layer.setStyle(s.current.imperialView ? imperialStyleFor(status, color) : styleFor(status, color));
+    }
+
+    function updateSpainVisibility() {
+      const esLayer = s.current.geoLayers["ES"];
+      const map = s.current.map;
+      if (!esLayer || !map) return;
+      if (map.getZoom() >= SPAIN_CCAA_ZOOM) {
+        esLayer.setStyle({ fillOpacity: 0, color: "rgba(0,0,0,0)", weight: 0 });
+      } else {
+        const status = getStatus("ES");
+        const color = getConquestColor();
+        esLayer.setStyle(s.current.imperialView ? imperialStyleFor(status, color) : styleFor(status, color));
+      }
     }
 
     function applyImperialStyles() {
       const active = s.current.imperialView;
       const color = getConquestColor();
+      const map = s.current.map;
       Object.entries(s.current.geoLayers).forEach(([iso, layer]) => {
+        if (iso === "ES" && map && map.getZoom() >= SPAIN_CCAA_ZOOM) {
+          layer.setStyle({ fillOpacity: 0, color: "rgba(0,0,0,0)", weight: 0 });
+          return;
+        }
+        if (iso.startsWith("ES-")) {
+          const status = getStatus(iso);
+          layer.setStyle({
+            ...styleFor(status, color),
+            color: "rgba(200,144,40,0.55)",
+            dashArray: status === "none" ? "4,3" : "",
+            weight: 1.4,
+          });
+          return;
+        }
         const status = getStatus(iso);
         layer.setStyle(active ? imperialStyleFor(status, color) : styleFor(status, color));
       });
@@ -155,9 +220,10 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
     }
 
     function spawnAnnexBurst(map: L.Map, lat: number, lng: number, iso: string) {
+      const baseIso = iso.includes("-") ? iso.split("-")[0] : iso;
       const icon = L.divIcon({
         className: "",
-        html: `<div class="annex-burst"><div class="annex-ring"></div><div class="annex-ring annex-ring-2"></div><div class="annex-flag"><img src="https://flagcdn.com/w40/${iso.toLowerCase()}.png" alt=""/></div></div>`,
+        html: `<div class="annex-burst"><div class="annex-ring"></div><div class="annex-ring annex-ring-2"></div><div class="annex-flag"><img src="https://flagcdn.com/w40/${baseIso.toLowerCase()}.png" alt=""/></div></div>`,
         iconSize: [0, 0],
         iconAnchor: [0, 0],
       });
@@ -182,32 +248,45 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         }
       }
       playFanfare();
-      const name = s.current.allCountries.find((c) => c.iso === iso)?.name ?? iso;
+      const name =
+        s.current.allCountries.find((c) => c.iso === iso)?.name ??
+        s.current.provinceNames[iso] ??
+        iso;
       onAnnex?.(iso, name);
     }
 
-    function updateBattleMarkers() {
-      const map = s.current.map;
-      if (!map) return;
-      Object.values(s.current.battleMarkers).forEach((m) => m.remove());
-      s.current.battleMarkers = {};
-      Object.entries(s.current.geoLayers).forEach(([iso, layer]) => {
-        if (getStatus(iso) !== "partial") return;
-        const bounds = layer.getBounds?.();
-        if (!bounds) return;
-        const c = bounds.getCenter();
-        const icon = L.divIcon({
-          className: "battle-marker-wrap",
-          html: '<div class="battle-marker">⚔</div>',
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-        });
-        s.current.battleMarkers[iso] = L.marker([c.lat, c.lng], {
-          icon,
-          interactive: false,
-          keyboard: false,
-          zIndexOffset: 1500,
-        }).addTo(map);
+    /* ── Icon markers ───────────────────────────────── */
+    function renderIconMarker(map: L.Map, id: string, type: string, lat: number, lng: number) {
+      const icon = L.divIcon({
+        className: "",
+        html: iconHtml(type, id),
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+      });
+      const marker = L.marker([lat, lng], {
+        icon,
+        interactive: true,
+        keyboard: false,
+        zIndexOffset: 1500,
+      }).addTo(map);
+      marker.on("click", (e: L.LeafletMouseEvent) => {
+        L.DomEvent.stopPropagation(e);
+        marker.remove();
+        delete s.current.iconMarkerLayers[id];
+        removeIconMarkerFromStorage(id);
+      });
+      s.current.iconMarkerLayers[id] = marker;
+    }
+
+    function placeIconMarker(map: L.Map, lat: number, lng: number, type: string) {
+      const id = `${type}-${Date.now()}`;
+      addIconMarker({ id, type: type as IconType, lat, lng });
+      renderIconMarker(map, id, type, lat, lng);
+    }
+
+    function loadIconMarkers(map: L.Map) {
+      getIconMarkers().forEach(({ id, type, lat, lng }) => {
+        renderIconMarker(map, id, type, lat, lng);
       });
     }
 
@@ -287,11 +366,16 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       const canvas = canvasRef.current;
       if (!ctx || !map || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      s.current.allCountries.forEach((c) => {
-        const strokes = getStrokes(c.iso);
+      // Draw all countries + province strokes
+      const isosToDraw = [
+        ...s.current.allCountries.map((c) => c.iso),
+        ...s.current.provinceKeys,
+      ];
+      isosToDraw.forEach((iso) => {
+        const strokes = getStrokes(iso);
         if (strokes.length === 0) return;
         ctx.save();
-        applyCountryClip(ctx, map, c.iso);
+        applyCountryClip(ctx, map, iso);
         strokes.forEach(drawStroke);
         ctx.restore();
       });
@@ -372,7 +456,6 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       ) {
         saveStatus(s.current.currentPaintIso, "partial");
         refreshStyle(s.current.currentPaintIso);
-        updateBattleMarkers();
         recomputeConqueredCount();
         triggerAnnexation(s.current.currentPaintIso);
       }
@@ -386,7 +469,6 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         if (status === "none") clearStrokes(iso);
         saveStatus(iso, status);
         refreshStyle(iso);
-        updateBattleMarkers();
         recomputeConqueredCount();
         redrawCanvas();
         if (wasNone && status !== "none") triggerAnnexation(iso);
@@ -420,7 +502,6 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         Object.keys(s.current.geoLayers).forEach((iso) => {
           if (getStatus(iso) !== "none") refreshStyle(iso);
         });
-        updateBattleMarkers();
         redrawCanvas();
       },
       setBrushSize(index) {
@@ -434,8 +515,10 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       toggleImperialView() {
         s.current.imperialView = !s.current.imperialView;
         applyImperialStyles();
-        updateBattleMarkers();
         return s.current.imperialView;
+      },
+      setIconMode(type: string | null) {
+        s.current.iconMode = type;
       },
     }));
 
@@ -443,12 +526,13 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
     useEffect(() => {
       if (!mapDivRef.current) return;
 
-      // Reset mutable collections in case of a Strict-Mode dev remount.
       s.current.geoLayers = {};
       s.current.geoGeometries = {};
-      s.current.battleMarkers = {};
+      s.current.iconMarkerLayers = {};
       s.current.allCountries = [];
-      s.current.spainLayer = null;
+      s.current.provinceKeys = [];
+      s.current.provinceNames = {};
+      s.current.spainProvinceLayer = null;
       s.current.capitalsLayer = null;
 
       let disposed = false;
@@ -467,10 +551,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       });
       s.current.map = map;
 
-      const worldB = L.latLngBounds([
-        [-65, -168],
-        [82, 178],
-      ]);
+      const worldB = L.latLngBounds([[-65, -168], [82, 178]]);
       map.fitBounds(worldB, { animate: false, padding: [0, 0] });
       map.setMinZoom(map.getZoom());
       map.setMaxBounds(L.latLngBounds([-78, -182], [86, 184]));
@@ -488,15 +569,15 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       map.on("zoomend", redrawCanvas);
       map.on("resize", syncCanvasSize);
 
-      function pointerDown(e: MouseEvent) {
-        onPaintDown(e.clientX, e.clientY);
-      }
-      function pointerMove(e: MouseEvent) {
-        onPaintMove(e.clientX, e.clientY);
-      }
-      function pointerUp() {
-        onPaintUp();
-      }
+      // Icon placement on map click
+      map.on("click", (e: L.LeafletMouseEvent) => {
+        if (!s.current.iconMode) return;
+        placeIconMarker(map, e.latlng.lat, e.latlng.lng, s.current.iconMode);
+      });
+
+      function pointerDown(e: MouseEvent) { onPaintDown(e.clientX, e.clientY); }
+      function pointerMove(e: MouseEvent) { onPaintMove(e.clientX, e.clientY); }
+      function pointerUp() { onPaintUp(); }
       canvas?.addEventListener("mousedown", pointerDown);
       canvas?.addEventListener("mousemove", pointerMove);
       document.addEventListener("mouseup", pointerUp);
@@ -519,7 +600,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       if (containerRef.current) resizeObserver.observe(containerRef.current);
 
       async function loadEverything() {
-        // Countries
+        // World countries
         const countriesRes = await fetch(`${BASE_PATH}/geo/countries.geojson`);
         const countriesData = await countriesRes.json();
         if (disposed) return;
@@ -535,30 +616,34 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
             s.current.geoGeometries[iso] = feature.geometry;
             s.current.allCountries.push({ iso, name });
 
-            layer.bindTooltip(tooltipHtml(iso, name, getStatus(iso)), {
-              className: "country-tooltip-rich",
-              sticky: true,
-              direction: "top",
-              offset: [0, -8],
-              opacity: 1,
-            });
-            layer.on("mouseover", () => {
+            layer.on("mouseover", (e: L.LeafletMouseEvent) => {
               if (s.current.isPaintMode) return;
-              layer.setTooltipContent(tooltipHtml(iso, name, getStatus(iso)));
+              const oe = e.originalEvent as MouseEvent;
+              onHover?.({ iso, name, status: getStatus(iso), x: oe.clientX, y: oe.clientY });
               const base = s.current.imperialView
                 ? imperialStyleFor(getStatus(iso), getConquestColor())
                 : styleFor(getStatus(iso), getConquestColor());
               (layer as L.Path).setStyle({ ...base, ...hoverFor(getStatus(iso), getConquestColor()) });
             });
+            layer.on("mousemove", (e: L.LeafletMouseEvent) => {
+              if (s.current.isPaintMode) return;
+              const oe = e.originalEvent as MouseEvent;
+              onHover?.({ iso, name, status: getStatus(iso), x: oe.clientX, y: oe.clientY });
+            });
             layer.on("mouseout", () => {
               if (s.current.isPaintMode) return;
+              onHover?.(null);
               const base = s.current.imperialView
                 ? imperialStyleFor(getStatus(iso), getConquestColor())
                 : styleFor(getStatus(iso), getConquestColor());
               (layer as L.Path).setStyle(base);
             });
-            layer.on("click", () => {
+            layer.on("click", (e: L.LeafletMouseEvent) => {
               if (s.current.isPaintMode) return;
+              if (s.current.iconMode) return;
+              // When Spain provinces visible, don't open Spain panel
+              if (iso === "ES" && map.getZoom() >= SPAIN_CCAA_ZOOM) return;
+              L.DomEvent.stopPropagation(e);
               onSelectCountry(iso, name);
               try {
                 map.flyToBounds((layer as L.Polygon).getBounds(), { padding: [60, 60], duration: 1, maxZoom: 6 });
@@ -572,54 +657,83 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
 
         onWorldLoaded(s.current.allCountries.length);
         recomputeConqueredCount();
-        updateBattleMarkers();
         redrawCanvas();
+        loadIconMarkers(map);
 
-
-        // Spain provinces (zoom-dependent)
+        // Spain provinces (zoom-dependent, each independently conquerable)
         fetch(`${BASE_PATH}/geo/spain-ccaa-simple.geojson`)
           .then((r) => r.json())
           .then((data) => {
             if (disposed) return;
-            const spainLayer = L.geoJSON(data, {
-              style: () => ({
-                fillColor: "#000000",
-                fillOpacity: 0.001,
-                color: "rgba(200,144,40,0.55)",
-                weight: 1.4,
-                dashArray: "4,3",
-                interactive: true,
-              }),
+            const spainProvinceLayer = L.geoJSON(data, {
+              style: (f) => {
+                const pname = f?.properties?.name || "";
+                const piso = `ES-${slugify(pname)}`;
+                const status = getStatus(piso);
+                const color = getConquestColor();
+                return {
+                  ...styleFor(status, color),
+                  color: "rgba(200,144,40,0.55)",
+                  dashArray: status === "none" ? "4,3" : "",
+                  weight: 1.4,
+                };
+              },
               onEachFeature: (f, layer) => {
-                const n = f.properties?.name || "";
-                layer.bindTooltip(`<div class="ccaa-tip">${n}</div>`, {
-                  className: "ccaa-tip-wrap",
-                  sticky: true,
-                  direction: "top",
-                  offset: [0, -6],
-                  opacity: 1,
+                const pname: string = f.properties?.name || "";
+                const piso = `ES-${slugify(pname)}`;
+                s.current.geoLayers[piso] = layer as L.Polygon;
+                s.current.geoGeometries[piso] = f.geometry as SimpleGeometry;
+                s.current.provinceKeys.push(piso);
+                s.current.provinceNames[piso] = pname;
+
+                layer.on("mouseover", (e: L.LeafletMouseEvent) => {
+                  if (s.current.isPaintMode) return;
+                  const oe = e.originalEvent as MouseEvent;
+                  const status = getStatus(piso);
+                  onHover?.({ iso: piso, name: pname, status, x: oe.clientX, y: oe.clientY });
+                  (layer as L.Path).setStyle({ color: "rgba(240,192,48,0.9)", weight: 2, dashArray: "" });
                 });
-                layer.on("mouseover", () =>
-                  (layer as L.Path).setStyle({ color: "rgba(240,192,48,0.85)", weight: 2, dashArray: "" }),
-                );
-                layer.on("mouseout", () =>
-                  (layer as L.Path).setStyle({ color: "rgba(200,144,40,0.55)", weight: 1.4, dashArray: "4,3" }),
-                );
-                layer.on("click", () => onSelectCountry("ES", "España"));
+                layer.on("mousemove", (e: L.LeafletMouseEvent) => {
+                  if (s.current.isPaintMode) return;
+                  const oe = e.originalEvent as MouseEvent;
+                  const status = getStatus(piso);
+                  onHover?.({ iso: piso, name: pname, status, x: oe.clientX, y: oe.clientY });
+                });
+                layer.on("mouseout", () => {
+                  if (s.current.isPaintMode) return;
+                  onHover?.(null);
+                  const status = getStatus(piso);
+                  const color = getConquestColor();
+                  (layer as L.Path).setStyle({
+                    ...styleFor(status, color),
+                    color: "rgba(200,144,40,0.55)",
+                    dashArray: status === "none" ? "4,3" : "",
+                    weight: 1.4,
+                  });
+                });
+                layer.on("click", (e: L.LeafletMouseEvent) => {
+                  if (s.current.isPaintMode) return;
+                  if (s.current.iconMode) return;
+                  L.DomEvent.stopPropagation(e);
+                  onSelectCountry(piso, pname);
+                });
               },
             });
-            s.current.spainLayer = spainLayer;
-            const update = () => {
-              if (!s.current.spainLayer) return;
+            s.current.spainProvinceLayer = spainProvinceLayer;
+
+            const updateProvinceVisibility = () => {
+              if (!s.current.spainProvinceLayer) return;
               if (map.getZoom() >= SPAIN_CCAA_ZOOM) {
-                if (!map.hasLayer(s.current.spainLayer)) s.current.spainLayer.addTo(map);
-              } else if (map.hasLayer(s.current.spainLayer)) {
-                map.removeLayer(s.current.spainLayer);
+                if (!map.hasLayer(s.current.spainProvinceLayer)) s.current.spainProvinceLayer.addTo(map);
+                updateSpainVisibility();
+              } else {
+                if (map.hasLayer(s.current.spainProvinceLayer)) map.removeLayer(s.current.spainProvinceLayer);
+                updateSpainVisibility();
               }
             };
-            update();
-            map.on("zoom", update);
-            map.on("zoomend", update);
+            updateProvinceVisibility();
+            map.on("zoom", updateProvinceVisibility);
+            map.on("zoomend", updateProvinceVisibility);
           })
           .catch(() => {});
 
@@ -676,6 +790,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
     return (
       <div ref={containerRef} className="map-root absolute inset-0 overflow-hidden">
         <div ref={mapDivRef} className="absolute inset-0" />
+        <div className="map-texture-overlay" aria-hidden />
         <canvas
           ref={canvasRef}
           className="absolute inset-0"

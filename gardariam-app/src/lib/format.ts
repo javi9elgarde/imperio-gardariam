@@ -16,5 +16,6 @@ export function stars(n: number): string {
 }
 
 export function flagUrl(iso: string): string {
-  return `https://flagcdn.com/w80/${iso.toLowerCase()}.png`;
+  const code = iso.includes("-") ? iso.split("-")[0] : iso;
+  return `https://flagcdn.com/w80/${code.toLowerCase()}.png`;
 }

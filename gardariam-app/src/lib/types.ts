@@ -37,3 +37,12 @@ export const EMPTY_COUNTRY_DATA: CountryData = {
   restaurants: [],
   highlights: [],
 };
+
+export type IconType = "battle" | "next" | "interest" | "danger" | "explore" | "alliance";
+
+export interface IconMarker {
+  id: string;
+  type: IconType;
+  lat: number;
+  lng: number;
+}
