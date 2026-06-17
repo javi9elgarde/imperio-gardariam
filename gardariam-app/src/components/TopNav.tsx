@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 const LINKS = [
   { id: "mapa", label: "Mapa" },
   { id: "banderas", label: "Banderas" },
@@ -20,8 +22,7 @@ export default function TopNav() {
         style={{ boxShadow: "0 0 0 1px rgba(200,144,40,0.4)" }}
         aria-label="Inicio"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="Imperio Gardariam" className="h-full w-full object-cover" />
+        <Image src="/logo.png" alt="Imperio Gardariam" width={32} height={32} className="h-full w-full object-cover" />
       </button>
       {LINKS.map((l) => (
         <button
