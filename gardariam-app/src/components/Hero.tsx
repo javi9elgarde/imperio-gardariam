@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import EmberParticles from "./EmberParticles";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -46,11 +45,10 @@ export default function Hero() {
           boxShadow: "0 0 80px rgba(200,144,40,0.3), 0 0 0 1px rgba(200,144,40,0.4)",
         }}
       >
-        <Image
-          src="/logo.png"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/imperio-gardariam/logo.png"
           alt="Imperio Gardariam"
-          width={260}
-          height={260}
           style={{ width: "100%", height: "auto", display: "block" }}
         />
       </motion.div>
