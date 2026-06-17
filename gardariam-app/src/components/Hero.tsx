@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import GardariamCrest from "./GardariamCrest";
 import EmberParticles from "./EmberParticles";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -38,9 +37,20 @@ export default function Hero() {
         initial={{ opacity: 0, scale: 0.82, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 1.3, ease: EASE }}
-        className="relative z-10 w-44 sm:w-56"
+        className="relative z-10"
+        style={{
+          width: "clamp(160px, 22vw, 240px)",
+          borderRadius: "50%",
+          overflow: "hidden",
+          boxShadow: "0 0 60px rgba(200,144,40,0.25), 0 0 0 2px rgba(200,144,40,0.35)",
+        }}
       >
-        <GardariamCrest withBanner={false} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt="Imperio Gardariam"
+          style={{ width: "100%", display: "block", filter: "brightness(0.92)" }}
+        />
       </motion.div>
 
       <motion.h1

@@ -1,7 +1,5 @@
 "use client";
 
-import GardariamCrest from "./GardariamCrest";
-
 const LINKS = [
   { id: "mapa", label: "Mapa" },
   { id: "banderas", label: "Banderas" },
@@ -18,10 +16,12 @@ export default function TopNav() {
     <nav className="glass-panel fixed left-1/2 top-4 z-[900] flex -translate-x-1/2 items-center gap-1 rounded-full px-2.5 py-1.5">
       <button
         onClick={() => scrollTo("hero")}
-        className="mr-1 flex h-7 w-7 items-center justify-center"
+        className="mr-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full"
+        style={{ boxShadow: "0 0 0 1px rgba(200,144,40,0.4)" }}
         aria-label="Inicio"
       >
-        <GardariamCrest withBanner={false} className="h-full w-full" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="Imperio Gardariam" className="h-full w-full object-cover" />
       </button>
       {LINKS.map((l) => (
         <button
