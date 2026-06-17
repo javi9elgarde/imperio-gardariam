@@ -808,7 +808,25 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
     return (
       <div ref={containerRef} className="map-root absolute inset-0 overflow-hidden">
         <div ref={mapDivRef} className="absolute inset-0" />
-        <div className="map-texture-overlay" aria-hidden />
+        <svg
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: 411,
+            opacity: 0.16,
+            mixBlendMode: "overlay",
+            pointerEvents: "none",
+          }}
+        >
+          <filter id="map-grain">
+            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+            <feColorMatrix type="saturate" values="0" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#map-grain)" />
+        </svg>
         <canvas
           ref={canvasRef}
           className="absolute inset-0"
