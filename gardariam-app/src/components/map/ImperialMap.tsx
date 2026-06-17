@@ -366,16 +366,31 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       const canvas = canvasRef.current;
       if (!ctx || !map || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Draw all countries + province strokes
-      const isosToDraw = [
-        ...s.current.allCountries.map((c) => c.iso),
-        ...s.current.provinceKeys,
-      ];
-      isosToDraw.forEach((iso) => {
-        const strokes = getStrokes(iso);
+
+      // Regular country paint strokes
+      s.current.allCountries.forEach((c) => {
+        const strokes = getStrokes(c.iso);
         if (strokes.length === 0) return;
         ctx.save();
+        applyCountryClip(ctx, map, c.iso);
+        strokes.forEach(drawStroke);
+        ctx.restore();
+      });
+
+      // Province conquest state — drawn on canvas at ALL zoom levels so
+      // conquered provinces remain visible when Spain is shown as one unit
+      s.current.provinceKeys.forEach((iso) => {
+        const status = getStatus(iso);
+        const strokes = getStrokes(iso);
+        if (status === "none" && strokes.length === 0) return;
+        ctx.save();
         applyCountryClip(ctx, map, iso);
+        if (status === "full") {
+          ctx.globalCompositeOperation = "source-over";
+          ctx.globalAlpha = 0.88;
+          ctx.fillStyle = getConquestColor();
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
         strokes.forEach(drawStroke);
         ctx.restore();
       });
