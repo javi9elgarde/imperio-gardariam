@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cinzel, Outfit } from "next/font/google";
+import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -31,7 +32,7 @@ export default function RootLayout({
       className={`${cinzel.variable} ${outfit.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-imperial-charcoal text-parchment">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

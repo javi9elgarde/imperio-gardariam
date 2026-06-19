@@ -15,7 +15,9 @@ import FlagRoom from "@/components/sections/FlagRoom";
 import StatsSection from "@/components/sections/StatsSection";
 import Timeline from "@/components/sections/Timeline";
 import TopNav from "@/components/TopNav";
+import { useAuth } from "@/lib/auth";
 import { computeStats } from "@/lib/stats";
+import { onStorageChange } from "@/lib/storage";
 import { loadCountriesList, type CountryInfo } from "@/lib/worldData";
 import { flagUrl } from "@/lib/format";
 
@@ -35,6 +37,7 @@ const STATUS_CLASS: Record<string, string> = {
 };
 
 export default function Home() {
+  const { isAdmin } = useAuth();
   const mapRef = useRef<ImperialMapHandle>(null);
   const [selected, setSelected] = useState<{ iso: string; name: string } | null>(null);
   const [count, setCount] = useState(0);
@@ -53,6 +56,13 @@ export default function Home() {
 
   useEffect(() => {
     loadCountriesList().then(setCountries);
+  }, []);
+
+  useEffect(() => {
+    return onStorageChange(() => {
+      bumpWorld();
+      mapRef.current?.redraw();
+    });
   }, []);
 
   function bumpWorld() {
@@ -136,6 +146,7 @@ export default function Home() {
               mapRef.current?.setIconMode(null);
             }
           }}
+          isAdmin={isAdmin}
         />
 
         <AnimatePresence>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useAuth } from "@/lib/auth";
+
 const LINKS = [
   { id: "mapa", label: "Mapa" },
   { id: "banderas", label: "Banderas" },
@@ -8,6 +10,8 @@ const LINKS = [
 ];
 
 export default function TopNav() {
+  const { user, isAdmin, loading, signIn, signOutUser } = useAuth();
+
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   }
@@ -32,6 +36,20 @@ export default function TopNav() {
           {l.label}
         </button>
       ))}
+      <div className="ml-1 h-5 w-px bg-imperial-gold/25" />
+      {!loading && (
+        <button
+          onClick={() => (user ? signOutUser() : signIn())}
+          title={user ? `Sesión: ${user.email}` : "Iniciar sesión"}
+          className={`font-display ml-1 rounded-full px-3 py-1.5 text-[0.56rem] uppercase tracking-[0.1em] transition-colors ${
+            isAdmin
+              ? "bg-imperial-gold/20 text-imperial-gold-bright"
+              : "text-parchment-faint hover:bg-imperial-gold/10 hover:text-imperial-gold-bright"
+          }`}
+        >
+          {user ? (isAdmin ? "⚜ Admin" : "Salir") : "Iniciar sesión"}
+        </button>
+      )}
     </nav>
   );
 }

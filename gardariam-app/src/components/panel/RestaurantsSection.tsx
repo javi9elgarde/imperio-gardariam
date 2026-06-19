@@ -6,6 +6,7 @@ import type { Restaurant } from "@/lib/types";
 
 interface RestaurantsSectionProps {
   restaurants: Restaurant[];
+  editable: boolean;
   onChange: (restaurants: Restaurant[]) => void;
 }
 
@@ -15,7 +16,7 @@ const inputCls =
 const labelCls =
   "font-display mb-1 block text-[0.56rem] uppercase tracking-[0.12em] text-parchment-faint";
 
-export default function RestaurantsSection({ restaurants, onChange }: RestaurantsSectionProps) {
+export default function RestaurantsSection({ restaurants, editable, onChange }: RestaurantsSectionProps) {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<Restaurant>(EMPTY);
@@ -53,7 +54,7 @@ export default function RestaurantsSection({ restaurants, onChange }: Restaurant
         <span className="font-display text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-parchment-faint">
           🍽 Gastronomía
         </span>
-        {!showForm && (
+        {editable && !showForm && (
           <button
             onClick={startAdd}
             className="font-display rounded-full border border-imperial-gold/25 bg-imperial-gold/8 px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] text-imperial-gold-bright transition-colors hover:bg-imperial-gold/18"
@@ -153,20 +154,22 @@ export default function RestaurantsSection({ restaurants, onChange }: Restaurant
               {r.note && (
                 <p className="mt-1.5 text-[0.74rem] italic leading-relaxed text-parchment-dim">{r.note}</p>
               )}
-              <div className="mt-2.5 flex justify-end gap-1.5">
-                <button
-                  onClick={() => startEdit(i)}
-                  className="font-display rounded border border-white/10 px-2.5 py-1 text-[0.54rem] uppercase tracking-[0.08em] text-parchment-faint transition-colors hover:border-imperial-gold/40 hover:text-imperial-gold-text"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => remove(i)}
-                  className="font-display rounded border border-white/10 px-2.5 py-1 text-[0.54rem] uppercase tracking-[0.08em] text-parchment-faint transition-colors hover:border-red-400/40 hover:text-red-300"
-                >
-                  Eliminar
-                </button>
-              </div>
+              {editable && (
+                <div className="mt-2.5 flex justify-end gap-1.5">
+                  <button
+                    onClick={() => startEdit(i)}
+                    className="font-display rounded border border-white/10 px-2.5 py-1 text-[0.54rem] uppercase tracking-[0.08em] text-parchment-faint transition-colors hover:border-imperial-gold/40 hover:text-imperial-gold-text"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => remove(i)}
+                    className="font-display rounded border border-white/10 px-2.5 py-1 text-[0.54rem] uppercase tracking-[0.08em] text-parchment-faint transition-colors hover:border-red-400/40 hover:text-red-300"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              )}
             </div>
           ),
         )}

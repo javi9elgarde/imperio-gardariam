@@ -6,6 +6,7 @@ import type { Visit } from "@/lib/types";
 
 interface VisitsSectionProps {
   visits: Visit[];
+  editable: boolean;
   onChange: (visits: Visit[]) => void;
   onPhotoClick: (src: string) => void;
 }
@@ -16,7 +17,7 @@ const inputCls =
 const labelCls =
   "font-display mb-1 block text-[0.56rem] uppercase tracking-[0.12em] text-parchment-faint";
 
-export default function VisitsSection({ visits, onChange, onPhotoClick }: VisitsSectionProps) {
+export default function VisitsSection({ visits, editable, onChange, onPhotoClick }: VisitsSectionProps) {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<Visit>(EMPTY);
@@ -54,7 +55,7 @@ export default function VisitsSection({ visits, onChange, onPhotoClick }: Visits
         <span className="font-display text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-parchment-faint">
           ⚔ Expediciones
         </span>
-        {!showForm && (
+        {editable && !showForm && (
           <button
             onClick={startAdd}
             className="font-display rounded-full border border-imperial-gold/25 bg-imperial-gold/8 px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] text-imperial-gold-bright transition-colors hover:bg-imperial-gold/18"
@@ -172,20 +173,22 @@ export default function VisitsSection({ visits, onChange, onPhotoClick }: Visits
                   ))}
                 </div>
               )}
-              <div className="mt-2.5 flex justify-end gap-1.5">
-                <button
-                  onClick={() => startEdit(i)}
-                  className="font-display rounded border border-white/10 px-2.5 py-1 text-[0.54rem] uppercase tracking-[0.08em] text-parchment-faint transition-colors hover:border-imperial-gold/40 hover:text-imperial-gold-text"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => remove(i)}
-                  className="font-display rounded border border-white/10 px-2.5 py-1 text-[0.54rem] uppercase tracking-[0.08em] text-parchment-faint transition-colors hover:border-red-400/40 hover:text-red-300"
-                >
-                  Eliminar
-                </button>
-              </div>
+              {editable && (
+                <div className="mt-2.5 flex justify-end gap-1.5">
+                  <button
+                    onClick={() => startEdit(i)}
+                    className="font-display rounded border border-white/10 px-2.5 py-1 text-[0.54rem] uppercase tracking-[0.08em] text-parchment-faint transition-colors hover:border-imperial-gold/40 hover:text-imperial-gold-text"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => remove(i)}
+                    className="font-display rounded border border-white/10 px-2.5 py-1 text-[0.54rem] uppercase tracking-[0.08em] text-parchment-faint transition-colors hover:border-red-400/40 hover:text-red-300"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              )}
             </div>
           ),
         )}

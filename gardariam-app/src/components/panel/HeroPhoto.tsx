@@ -7,10 +7,11 @@ interface HeroPhotoProps {
   iso: string;
   name: string;
   coverPhoto: string;
+  editable: boolean;
   onChange: (url: string) => void;
 }
 
-export default function HeroPhoto({ iso, name, coverPhoto, onChange }: HeroPhotoProps) {
+export default function HeroPhoto({ iso, name, coverPhoto, editable, onChange }: HeroPhotoProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(coverPhoto);
 
@@ -24,15 +25,17 @@ export default function HeroPhoto({ iso, name, coverPhoto, onChange }: HeroPhoto
       )}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-imperial-charcoal via-imperial-charcoal/10 to-transparent" />
 
-      <button
-        onClick={() => {
-          setDraft(coverPhoto);
-          setEditing((e) => !e);
-        }}
-        className="font-display absolute right-3 top-3 rounded-full border border-imperial-gold/30 bg-imperial-charcoal/70 px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] text-imperial-gold-bright backdrop-blur transition-colors hover:bg-imperial-charcoal/90"
-      >
-        ⚜ Foto
-      </button>
+      {editable && (
+        <button
+          onClick={() => {
+            setDraft(coverPhoto);
+            setEditing((e) => !e);
+          }}
+          className="font-display absolute right-3 top-3 rounded-full border border-imperial-gold/30 bg-imperial-charcoal/70 px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] text-imperial-gold-bright backdrop-blur transition-colors hover:bg-imperial-charcoal/90"
+        >
+          ⚜ Foto
+        </button>
+      )}
 
       <div className="absolute bottom-3 left-4 right-16 flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}

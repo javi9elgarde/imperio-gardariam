@@ -13,6 +13,7 @@ interface HudBarProps {
   onToggleImperialView: () => void;
   iconBarOpen: boolean;
   onToggleIconBar: () => void;
+  isAdmin: boolean;
 }
 
 export default function HudBar({
@@ -24,6 +25,7 @@ export default function HudBar({
   onToggleImperialView,
   iconBarOpen,
   onToggleIconBar,
+  isAdmin,
 }: HudBarProps) {
   const [muted, setMuted] = useState(() => isSoundMuted());
 
@@ -42,19 +44,23 @@ export default function HudBar({
         </motion.strong>{" "}
         / {total} territorios conquistados
       </span>
-      <div className="h-5 w-px bg-imperial-gold/25" />
-      <label
-        className="relative h-6 w-6 cursor-pointer rounded-full border-2"
-        style={{ background: color, borderColor: "var(--color-imperial-gold)" }}
-        title="Color de conquista"
-      >
-        <input
-          type="color"
-          value={color}
-          onChange={(e) => onColorChange(e.target.value)}
-          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-        />
-      </label>
+      {isAdmin && (
+        <>
+          <div className="h-5 w-px bg-imperial-gold/25" />
+          <label
+            className="relative h-6 w-6 cursor-pointer rounded-full border-2"
+            style={{ background: color, borderColor: "var(--color-imperial-gold)" }}
+            title="Color de conquista"
+          >
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => onColorChange(e.target.value)}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
+          </label>
+        </>
+      )}
       <div className="h-5 w-px bg-imperial-gold/25" />
       <button
         onClick={() => {
@@ -77,17 +83,19 @@ export default function HudBar({
       >
         ⚜ Vista Imperial
       </button>
-      <button
-        onClick={onToggleIconBar}
-        title="Iconos en el mapa"
-        className={`font-display rounded-full border px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] transition-colors ${
-          iconBarOpen
-            ? "border-imperial-gold bg-imperial-gold/20 text-imperial-gold-bright"
-            : "border-white/10 text-parchment-faint hover:border-imperial-gold/40"
-        }`}
-      >
-        ✦ Iconos
-      </button>
+      {isAdmin && (
+        <button
+          onClick={onToggleIconBar}
+          title="Iconos en el mapa"
+          className={`font-display rounded-full border px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] transition-colors ${
+            iconBarOpen
+              ? "border-imperial-gold bg-imperial-gold/20 text-imperial-gold-bright"
+              : "border-white/10 text-parchment-faint hover:border-imperial-gold/40"
+          }`}
+        >
+          ✦ Iconos
+        </button>
+      )}
     </div>
   );
 }

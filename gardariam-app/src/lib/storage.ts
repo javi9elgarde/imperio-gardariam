@@ -1,4 +1,12 @@
 import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  setDoc,
+} from "firebase/firestore";
+import { db } from "./firebase";
+import {
   ConquestStatus,
   CountryData,
   EMPTY_COUNTRY_DATA,
@@ -8,15 +16,12 @@ import {
 
 const isBrowser = typeof window !== "undefined";
 
-const KEYS = {
-  conquest: "gardariam_next_conquest_v1",
-  paint: "gardariam_next_paint_v1",
-  countryData: "gardariam_next_country_data_v1",
+/* ── Local device preferences (kept in localStorage, not shared) ── */
+const PREF_KEYS = {
   color: "gardariam_next_color_v1",
-  icons: "gardariam_next_icons_v1",
 } as const;
 
-function readJSON<T>(key: string, fallback: T): T {
+function readLocal<T>(key: string, fallback: T): T {
   if (!isBrowser) return fallback;
   try {
     const raw = localStorage.getItem(key);
@@ -26,7 +31,7 @@ function readJSON<T>(key: string, fallback: T): T {
   }
 }
 
-function writeJSON<T>(key: string, value: T): void {
+function writeLocal<T>(key: string, value: T): void {
   if (!isBrowser) return;
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -35,82 +40,151 @@ function writeJSON<T>(key: string, value: T): void {
   }
 }
 
+/* ── Shared world state, mirrored in-memory from Firestore ── */
+let conquestCache: Record<string, ConquestStatus> = {};
+let paintCache: Record<string, PaintStroke[]> = {};
+let countryDataCache: Record<string, CountryData> = {};
+let iconsCache: IconMarker[] = [];
+
+let listeners: Array<() => void> = [];
+
+export function onStorageChange(cb: () => void): () => void {
+  listeners.push(cb);
+  return () => {
+    listeners = listeners.filter((l) => l !== cb);
+  };
+}
+
+function notify(): void {
+  listeners.forEach((l) => l());
+}
+
+let initialized = false;
+
+function initFirestoreSync(): void {
+  if (initialized || !isBrowser) return;
+  initialized = true;
+
+  onSnapshot(collection(db, "conquests"), (snap) => {
+    const next: Record<string, ConquestStatus> = {};
+    snap.forEach((d) => {
+      next[d.id] = d.data().status as ConquestStatus;
+    });
+    conquestCache = next;
+    notify();
+  });
+
+  onSnapshot(collection(db, "paintStrokes"), (snap) => {
+    const next: Record<string, PaintStroke[]> = {};
+    snap.forEach((d) => {
+      next[d.id] = (d.data().strokes as PaintStroke[]) ?? [];
+    });
+    paintCache = next;
+    notify();
+  });
+
+  onSnapshot(collection(db, "countryData"), (snap) => {
+    const next: Record<string, CountryData> = {};
+    snap.forEach((d) => {
+      next[d.id] = d.data() as CountryData;
+    });
+    countryDataCache = next;
+    notify();
+  });
+
+  onSnapshot(collection(db, "icons"), (snap) => {
+    iconsCache = snap.docs.map((d) => d.data() as IconMarker);
+    notify();
+  });
+}
+
+initFirestoreSync();
+
 /* ── Conquest status ────────────────────────────── */
 export function getConquestMap(): Record<string, ConquestStatus> {
-  return readJSON(KEYS.conquest, {});
+  return conquestCache;
 }
 
 export function getStatus(iso: string): ConquestStatus {
-  return getConquestMap()[iso] ?? "none";
+  return conquestCache[iso] ?? "none";
 }
 
 export function setStatus(iso: string, status: ConquestStatus): void {
-  const map = getConquestMap();
-  if (status === "none") delete map[iso];
-  else map[iso] = status;
-  writeJSON(KEYS.conquest, map);
+  const next = { ...conquestCache };
+  if (status === "none") {
+    delete next[iso];
+    void deleteDoc(doc(db, "conquests", iso));
+  } else {
+    next[iso] = status;
+    void setDoc(doc(db, "conquests", iso), { status });
+  }
+  conquestCache = next;
+  notify();
 }
 
 /* ── Paint strokes ──────────────────────────────── */
 export function getPaintMap(): Record<string, PaintStroke[]> {
-  return readJSON(KEYS.paint, {});
+  return paintCache;
 }
 
 export function getStrokes(iso: string): PaintStroke[] {
-  return getPaintMap()[iso] ?? [];
+  return paintCache[iso] ?? [];
 }
 
 export function addStroke(iso: string, stroke: PaintStroke): void {
-  const map = getPaintMap();
-  if (!map[iso]) map[iso] = [];
-  map[iso].push(stroke);
-  writeJSON(KEYS.paint, map);
+  const strokes = [...(paintCache[iso] ?? []), stroke];
+  paintCache = { ...paintCache, [iso]: strokes };
+  void setDoc(doc(db, "paintStrokes", iso), { strokes });
+  notify();
 }
 
 export function clearStrokes(iso: string): void {
-  const map = getPaintMap();
-  delete map[iso];
-  writeJSON(KEYS.paint, map);
+  const next = { ...paintCache };
+  delete next[iso];
+  paintCache = next;
+  void deleteDoc(doc(db, "paintStrokes", iso));
+  notify();
 }
 
 /* ── Country data (visits / restaurants / highlights) ── */
 export function getCountryDataMap(): Record<string, CountryData> {
-  return readJSON(KEYS.countryData, {});
+  return countryDataCache;
 }
 
 export function getCountryData(iso: string): CountryData {
-  return getCountryDataMap()[iso] ?? EMPTY_COUNTRY_DATA;
+  return countryDataCache[iso] ?? EMPTY_COUNTRY_DATA;
 }
 
 export function setCountryData(iso: string, data: CountryData): void {
-  const map = getCountryDataMap();
-  map[iso] = data;
-  writeJSON(KEYS.countryData, map);
+  countryDataCache = { ...countryDataCache, [iso]: data };
+  void setDoc(doc(db, "countryData", iso), data);
+  notify();
 }
 
-/* ── Conquest color ─────────────────────────────── */
+/* ── Conquest color (per-device preference, stays local) ── */
 export const DEFAULT_CONQUEST_COLOR = "#8b1a2a";
 
 export function getConquestColor(): string {
-  return readJSON(KEYS.color, DEFAULT_CONQUEST_COLOR);
+  return readLocal(PREF_KEYS.color, DEFAULT_CONQUEST_COLOR);
 }
 
 export function setConquestColor(color: string): void {
-  writeJSON(KEYS.color, color);
+  writeLocal(PREF_KEYS.color, color);
 }
 
 /* ── Icon markers ───────────────────────────────── */
 export function getIconMarkers(): IconMarker[] {
-  return readJSON(KEYS.icons, []);
+  return iconsCache;
 }
 
 export function addIconMarker(marker: IconMarker): void {
-  const markers = getIconMarkers();
-  markers.push(marker);
-  writeJSON(KEYS.icons, markers);
+  iconsCache = [...iconsCache, marker];
+  void setDoc(doc(db, "icons", marker.id), marker);
+  notify();
 }
 
 export function removeIconMarker(id: string): void {
-  const markers = getIconMarkers().filter((m) => m.id !== id);
-  writeJSON(KEYS.icons, markers);
+  iconsCache = iconsCache.filter((m) => m.id !== id);
+  void deleteDoc(doc(db, "icons", id));
+  notify();
 }

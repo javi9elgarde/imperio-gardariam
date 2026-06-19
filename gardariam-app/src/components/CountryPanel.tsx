@@ -7,6 +7,7 @@ import HighlightsSection from "@/components/panel/HighlightsSection";
 import Lightbox from "@/components/panel/Lightbox";
 import RestaurantsSection from "@/components/panel/RestaurantsSection";
 import VisitsSection from "@/components/panel/VisitsSection";
+import { useAuth } from "@/lib/auth";
 import { getCountryData, getStatus, setCountryData } from "@/lib/storage";
 import type { ConquestStatus, CountryData, Restaurant, Visit } from "@/lib/types";
 
@@ -33,6 +34,7 @@ export default function CountryPanel({
   onConquistar,
   onDataChange,
 }: CountryPanelProps) {
+  const { isAdmin } = useAuth();
   const [status, setStatus] = useState<ConquestStatus>(() => getStatus(iso));
   const [data, setData] = useState<CountryData>(() => getCountryData(iso));
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -73,37 +75,55 @@ export default function CountryPanel({
           iso={iso}
           name={name}
           coverPhoto={data.coverPhoto}
+          editable={isAdmin}
           onChange={(url) => persist({ ...data, coverPhoto: url })}
         />
 
-        <div className="flex flex-shrink-0 gap-2 px-5 pt-4">
-          {BUTTONS.map((b) => (
-            <button
-              key={b.status}
-              onClick={() => handleConquestClick(b.status)}
-              className={`font-display flex-1 rounded px-2 py-2 text-[0.58rem] font-semibold uppercase tracking-[0.08em] transition-colors ${
-                status === b.status
+        {isAdmin ? (
+          <div className="flex flex-shrink-0 gap-2 px-5 pt-4">
+            {BUTTONS.map((b) => (
+              <button
+                key={b.status}
+                onClick={() => handleConquestClick(b.status)}
+                className={`font-display flex-1 rounded px-2 py-2 text-[0.58rem] font-semibold uppercase tracking-[0.08em] transition-colors ${
+                  status === b.status
+                    ? "border border-imperial-gold bg-imperial-gold/18 text-imperial-gold-bright"
+                    : "border border-white/10 bg-imperial-charcoal-3 text-parchment-faint hover:border-imperial-gold/40"
+                }`}
+              >
+                {b.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="flex-shrink-0 px-5 pt-4">
+            <span
+              className={`font-display inline-block rounded px-3 py-1.5 text-[0.58rem] font-semibold uppercase tracking-[0.08em] ${
+                status === "full"
                   ? "border border-imperial-gold bg-imperial-gold/18 text-imperial-gold-bright"
-                  : "border border-white/10 bg-imperial-charcoal-3 text-parchment-faint hover:border-imperial-gold/40"
+                  : "border border-white/10 bg-imperial-charcoal-3 text-parchment-faint"
               }`}
             >
-              {b.label}
-            </button>
-          ))}
-        </div>
+              {BUTTONS.find((b) => b.status === status)?.label}
+            </span>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
           <VisitsSection
             visits={data.visits}
+            editable={isAdmin}
             onChange={(visits: Visit[]) => persist({ ...data, visits })}
             onPhotoClick={setLightboxSrc}
           />
           <RestaurantsSection
             restaurants={data.restaurants}
+            editable={isAdmin}
             onChange={(restaurants: Restaurant[]) => persist({ ...data, restaurants })}
           />
           <HighlightsSection
             highlights={data.highlights}
+            editable={isAdmin}
             onChange={(highlights: string[]) => persist({ ...data, highlights })}
           />
         </div>

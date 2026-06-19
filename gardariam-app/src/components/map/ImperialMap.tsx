@@ -8,6 +8,7 @@ import {
   useImperativeHandle,
   useRef,
 } from "react";
+import { useAuth } from "@/lib/auth";
 import {
   addIconMarker,
   addStroke,
@@ -56,6 +57,7 @@ export interface ImperialMapHandle {
   toggleEraseMode: () => boolean;
   toggleImperialView: () => boolean;
   setIconMode: (type: string | null) => void;
+  redraw: () => void;
 }
 
 interface ImperialMapProps {
@@ -122,6 +124,9 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
     { onSelectCountry, onConqueredCountChange, onWorldLoaded, onAnnex, onHover },
     ref,
   ) {
+    const { isAdmin } = useAuth();
+    const isAdminRef = useRef(isAdmin);
+    isAdminRef.current = isAdmin;
     const mapDivRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const cursorRef = useRef<HTMLDivElement>(null);
@@ -271,6 +276,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       }).addTo(map);
       marker.on("click", (e: L.LeafletMouseEvent) => {
         L.DomEvent.stopPropagation(e);
+        if (!isAdminRef.current) return;
         marker.remove();
         delete s.current.iconMarkerLayers[id];
         removeIconMarkerFromStorage(id);
@@ -482,6 +488,17 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
 
     /* ── Imperative handle ───────────────────────────── */
     useImperativeHandle(ref, () => ({
+      redraw() {
+        Object.keys(s.current.geoLayers).forEach((iso) => refreshStyle(iso));
+        recomputeConqueredCount();
+        redrawCanvas();
+        const map = s.current.map;
+        if (map) {
+          Object.values(s.current.iconMarkerLayers).forEach((m) => m.remove());
+          s.current.iconMarkerLayers = {};
+          loadIconMarkers(map);
+        }
+      },
       setCountryStatus(iso, status) {
         const wasNone = getStatus(iso) === "none";
         if (status === "none") clearStrokes(iso);

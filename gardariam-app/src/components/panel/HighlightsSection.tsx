@@ -4,10 +4,11 @@ import { useState } from "react";
 
 interface HighlightsSectionProps {
   highlights: string[];
+  editable: boolean;
   onChange: (highlights: string[]) => void;
 }
 
-export default function HighlightsSection({ highlights, onChange }: HighlightsSectionProps) {
+export default function HighlightsSection({ highlights, editable, onChange }: HighlightsSectionProps) {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
 
@@ -28,7 +29,7 @@ export default function HighlightsSection({ highlights, onChange }: HighlightsSe
         <span className="font-display text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-parchment-faint">
           ⚜ Lugares Destacados
         </span>
-        {!adding && (
+        {editable && !adding && (
           <button
             onClick={() => setAdding(true)}
             className="font-display rounded-full border border-imperial-gold/25 bg-imperial-gold/8 px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] text-imperial-gold-bright transition-colors hover:bg-imperial-gold/18"
@@ -85,12 +86,14 @@ export default function HighlightsSection({ highlights, onChange }: HighlightsSe
           >
             <span className="flex-shrink-0 text-[0.7rem] text-imperial-gold">⚔</span>
             <span className="flex-1 text-[0.78rem] text-parchment-dim">{h}</span>
-            <button
-              onClick={() => remove(i)}
-              className="flex-shrink-0 px-1 text-[0.75rem] text-parchment-faint transition-colors hover:text-red-300"
-            >
-              ✕
-            </button>
+            {editable && (
+              <button
+                onClick={() => remove(i)}
+                className="flex-shrink-0 px-1 text-[0.75rem] text-parchment-faint transition-colors hover:text-red-300"
+              >
+                ✕
+              </button>
+            )}
           </div>
         ))}
       </div>
