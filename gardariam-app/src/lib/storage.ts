@@ -1,4 +1,5 @@
 import {
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -132,10 +133,14 @@ export function getStrokes(iso: string): PaintStroke[] {
 }
 
 export function addStroke(iso: string, stroke: PaintStroke): void {
+  // Optimistic local update for instant feedback...
   const strokes = [...(paintCache[iso] ?? []), stroke];
   paintCache = { ...paintCache, [iso]: strokes };
-  void setDoc(doc(db, "paintStrokes", iso), { strokes });
   notify();
+  // ...but the actual write is an atomic server-side append (arrayUnion), so it can
+  // never clobber strokes that exist in Firestore but haven't reached our local cache
+  // yet (e.g. right after a fresh page load, before the snapshot listener catches up).
+  void setDoc(doc(db, "paintStrokes", iso), { strokes: arrayUnion(stroke) }, { merge: true });
 }
 
 export function clearStrokes(iso: string): void {
@@ -155,10 +160,12 @@ export function getCountryData(iso: string): CountryData {
   return countryDataCache[iso] ?? EMPTY_COUNTRY_DATA;
 }
 
-export function setCountryData(iso: string, data: CountryData): void {
-  countryDataCache = { ...countryDataCache, [iso]: data };
-  void setDoc(doc(db, "countryData", iso), data);
+export function setCountryData(iso: string, patch: Partial<CountryData>): void {
+  countryDataCache = { ...countryDataCache, [iso]: { ...getCountryData(iso), ...patch } };
   notify();
+  // Merge (not replace) so a stale local cache can never wipe out sibling fields
+  // (e.g. restaurants) that already exist in Firestore but haven't synced down yet.
+  void setDoc(doc(db, "countryData", iso), patch, { merge: true });
 }
 
 /* ── Conquest color (per-device preference, stays local) ── */

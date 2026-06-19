@@ -40,9 +40,9 @@ export default function CountryPanel({
   const [data, setData] = useState<CountryData>(() => getCountryData(iso));
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
-  function persist(next: CountryData) {
-    setData(next);
-    setCountryData(iso, next);
+  function persist(patch: Partial<CountryData>) {
+    setData((prev) => ({ ...prev, ...patch }));
+    setCountryData(iso, patch);
     onDataChange?.();
   }
 
@@ -77,7 +77,7 @@ export default function CountryPanel({
           name={name}
           coverPhoto={data.coverPhoto}
           editable={isAdmin}
-          onChange={(url) => persist({ ...data, coverPhoto: url })}
+          onChange={(url) => persist({ coverPhoto: url })}
         />
 
         {isAdmin ? (
@@ -114,23 +114,23 @@ export default function CountryPanel({
           <VideoSection
             videoUrl={data.videoUrl}
             editable={isAdmin}
-            onChange={(videoUrl: string) => persist({ ...data, videoUrl })}
+            onChange={(videoUrl: string) => persist({ videoUrl })}
           />
           <VisitsSection
             visits={data.visits}
             editable={isAdmin}
-            onChange={(visits: Visit[]) => persist({ ...data, visits })}
+            onChange={(visits: Visit[]) => persist({ visits })}
             onPhotoClick={setLightboxSrc}
           />
           <RestaurantsSection
             restaurants={data.restaurants}
             editable={isAdmin}
-            onChange={(restaurants: Restaurant[]) => persist({ ...data, restaurants })}
+            onChange={(restaurants: Restaurant[]) => persist({ restaurants })}
           />
           <HighlightsSection
             highlights={data.highlights}
             editable={isAdmin}
-            onChange={(highlights: string[]) => persist({ ...data, highlights })}
+            onChange={(highlights: string[]) => persist({ highlights })}
           />
         </div>
       </motion.aside>
