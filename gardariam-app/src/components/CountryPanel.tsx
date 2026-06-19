@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import HeroPhoto from "@/components/panel/HeroPhoto";
 import HighlightsSection from "@/components/panel/HighlightsSection";
 import Lightbox from "@/components/panel/Lightbox";
@@ -9,7 +9,7 @@ import RestaurantsSection from "@/components/panel/RestaurantsSection";
 import VideoSection from "@/components/panel/VideoSection";
 import VisitsSection from "@/components/panel/VisitsSection";
 import { useAuth } from "@/lib/auth";
-import { getCountryData, getStatus, setCountryData } from "@/lib/storage";
+import { getCountryData, getStatus, onStorageChange, setCountryData } from "@/lib/storage";
 import type { ConquestStatus, CountryData, Restaurant, Visit } from "@/lib/types";
 
 interface CountryPanelProps {
@@ -39,6 +39,15 @@ export default function CountryPanel({
   const [status, setStatus] = useState<ConquestStatus>(() => getStatus(iso));
   const [data, setData] = useState<CountryData>(() => getCountryData(iso));
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+  // Keep this panel's status/data in sync with live painting/Firestore updates —
+  // otherwise it stays frozen at whatever it was when the panel first opened.
+  useEffect(() => {
+    return onStorageChange(() => {
+      setStatus(getStatus(iso));
+      setData(getCountryData(iso));
+    });
+  }, [iso]);
 
   function persist(patch: Partial<CountryData>) {
     setData((prev) => ({ ...prev, ...patch }));

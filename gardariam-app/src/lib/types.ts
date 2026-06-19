@@ -5,7 +5,9 @@ export interface PaintStroke {
   zoom: number;
   color: string;
   eraser: boolean;
-  points: [number, number][];
+  // Stored as {lat,lng} objects, not [number,number] tuples — Firestore does not
+  // support arrays nested directly inside arrays.
+  points: { lat: number; lng: number }[];
 }
 
 export interface Visit {

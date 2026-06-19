@@ -145,7 +145,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       isEraseMode: false,
       isPainting: false,
       currentBrush: 1,
-      activeStroke: [] as [number, number][],
+      activeStroke: [] as { lat: number; lng: number }[],
       currentPaintIso: null as string | null,
       iconMode: null as string | null,
     });
@@ -319,16 +319,16 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       ctx.lineJoin = "round";
       const pts = stroke.points;
       if (pts.length === 1) {
-        const p0 = map.latLngToContainerPoint(L.latLng(pts[0][0], pts[0][1]));
+        const p0 = map.latLngToContainerPoint(L.latLng(pts[0].lat, pts[0].lng));
         ctx.beginPath();
         ctx.arc(p0.x, p0.y, w / 2, 0, Math.PI * 2);
         ctx.fill();
       } else {
         ctx.beginPath();
-        const f = map.latLngToContainerPoint(L.latLng(pts[0][0], pts[0][1]));
+        const f = map.latLngToContainerPoint(L.latLng(pts[0].lat, pts[0].lng));
         ctx.moveTo(f.x, f.y);
         for (let i = 1; i < pts.length; i++) {
-          const p = map.latLngToContainerPoint(L.latLng(pts[i][0], pts[i][1]));
+          const p = map.latLngToContainerPoint(L.latLng(pts[i].lat, pts[i].lng));
           ctx.lineTo(p.x, p.y);
         }
         ctx.stroke();
@@ -421,7 +421,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       s.current.isPainting = true;
       s.current.activeStroke = [];
       const ll = canvasLatLng(clientX, clientY);
-      s.current.activeStroke.push([ll.lat, ll.lng]);
+      s.current.activeStroke.push({ lat: ll.lat, lng: ll.lng });
       redrawCanvas();
     }
     function onPaintMove(clientX: number, clientY: number) {
@@ -429,7 +429,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       updateBrushCursor(clientX, clientY);
       if (!s.current.isPainting) return;
       const ll = canvasLatLng(clientX, clientY);
-      s.current.activeStroke.push([ll.lat, ll.lng]);
+      s.current.activeStroke.push({ lat: ll.lat, lng: ll.lng });
       redrawCanvas();
     }
     function onPaintUp() {
