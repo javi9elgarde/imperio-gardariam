@@ -372,6 +372,18 @@ body {
   text-shadow: 0 0 3px rgba(220, 190, 130, 0.7), 0 1px 0 rgba(220, 190, 130, 0.4);
 }
 
+/* Capitals of conquered territories sit on dark fills — switch to a bright,
+   high-contrast style instead of the dark-on-parchment default above. */
+.cap-mk.is-conquered .cap-dot {
+  background: rgba(240, 210, 130, 0.95);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 5px rgba(240, 197, 66, 0.8);
+}
+.cap-mk.is-conquered .cap-nm {
+  color: rgba(250, 230, 170, 0.98);
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.85), 0 1px 1px rgba(0, 0, 0, 0.9);
+}
+
 /* ── Annexation burst (conquest animation) ───────── */
 .annex-burst {
   position: relative;

@@ -138,6 +138,8 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       provinceNames: {} as Record<string, string>,
       spainProvinceLayer: null as L.GeoJSON | null,
       capitalsLayer: null as L.GeoJSON | null,
+      capitalMarkers: [] as { marker: L.Marker; latlng: L.LatLng; iso: string; pop: number }[],
+      refreshCapitals: null as (() => void) | null,
       ctx: null as CanvasRenderingContext2D | null,
       isPaintMode: false,
       isEraseMode: false,
@@ -451,6 +453,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         saveStatus(s.current.currentPaintIso, "partial");
         refreshStyle(s.current.currentPaintIso);
         recomputeConqueredCount();
+        s.current.refreshCapitals?.();
         triggerAnnexation(s.current.currentPaintIso);
       }
       redrawCanvas();
@@ -462,6 +465,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         Object.keys(s.current.geoLayers).forEach((iso) => refreshStyle(iso));
         recomputeConqueredCount();
         redrawCanvas();
+        s.current.refreshCapitals?.();
         const map = s.current.map;
         if (map) {
           Object.values(s.current.iconMarkerLayers).forEach((m) => m.remove());
@@ -476,6 +480,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         refreshStyle(iso);
         recomputeConqueredCount();
         redrawCanvas();
+        s.current.refreshCapitals?.();
         if (wasNone && status !== "none") triggerAnnexation(iso);
       },
       enterPaintMode(iso) {
@@ -739,10 +744,12 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
           .then((r) => r.json())
           .then((data) => {
             if (disposed) return;
-            const capitalMarkers: { marker: L.Marker; latlng: L.LatLng }[] = [];
+            const capitalMarkers: { marker: L.Marker; latlng: L.LatLng; iso: string; pop: number }[] = [];
             const capitalsLayer = L.geoJSON(data, {
               pointToLayer: (f, latlng) => {
                 const name = getCapitalNameEs(f.properties?.name || "");
+                const iso = (f.properties?.iso2 || "").toUpperCase();
+                const pop = Number(f.properties?.pop) || 0;
                 const icon = L.divIcon({
                   className: "",
                   html: `<div class="cap-mk"><div class="cap-dot"></div><span class="cap-nm">${name}</span></div>`,
@@ -755,21 +762,28 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
                   keyboard: false,
                   zIndexOffset: 800,
                 });
-                capitalMarkers.push({ marker, latlng });
+                capitalMarkers.push({ marker, latlng, iso, pop });
                 return marker;
               },
             });
             s.current.capitalsLayer = capitalsLayer;
+            s.current.capitalMarkers = capitalMarkers;
+            s.current.refreshCapitals = () => declutter();
 
-            // Hide capital labels that would overlap a nearby one at the current zoom
-            // (e.g. Rome / Vatican City are only ~2km apart and collide on screen)
+            // Bigger/more populated capitals win when two labels overlap on screen
+            // (e.g. Rome vs. Vatican City, only ~2km apart)
+            const byPopDesc = [...capitalMarkers].sort((a, b) => b.pop - a.pop);
+
             function declutter() {
               const accepted: L.Point[] = [];
-              capitalMarkers.forEach(({ marker, latlng }) => {
+              byPopDesc.forEach(({ marker, latlng, iso }) => {
                 const pt = map.latLngToContainerPoint(latlng);
                 const overlaps = accepted.some((a) => pt.distanceTo(a) < 26);
                 const el = marker.getElement();
-                if (el) el.style.display = overlaps ? "none" : "";
+                if (el) {
+                  el.style.display = overlaps ? "none" : "";
+                  el.classList.toggle("is-conquered", getStatus(iso) !== "none");
+                }
                 if (!overlaps) accepted.push(pt);
               });
             }
