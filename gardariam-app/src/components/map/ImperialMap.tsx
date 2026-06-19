@@ -127,6 +127,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const cursorRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const capitalsOverlayRef = useRef<HTMLDivElement>(null);
 
     const s = useRef({
       map: null as L.Map | null,
@@ -137,8 +138,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       provinceKeys: [] as string[],
       provinceNames: {} as Record<string, string>,
       spainProvinceLayer: null as L.GeoJSON | null,
-      capitalsLayer: null as L.GeoJSON | null,
-      capitalMarkers: [] as { marker: L.Marker; latlng: L.LatLng; iso: string; pop: number }[],
+      capitalMarkers: [] as { el: HTMLDivElement; latlng: L.LatLng; iso: string; pop: number }[],
       refreshCapitals: null as (() => void) | null,
       ctx: null as CanvasRenderingContext2D | null,
       isPaintMode: false,
@@ -541,7 +541,9 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       s.current.provinceKeys = [];
       s.current.provinceNames = {};
       s.current.spainProvinceLayer = null;
-      s.current.capitalsLayer = null;
+      s.current.capitalMarkers = [];
+      s.current.refreshCapitals = null;
+      if (capitalsOverlayRef.current) capitalsOverlayRef.current.innerHTML = "";
 
       let disposed = false;
 
@@ -739,73 +741,66 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
           })
           .catch(() => {});
 
-        // Capitals (zoom-dependent)
+        // Capitals (zoom-dependent). Rendered as plain DOM elements positioned by hand
+        // (not Leaflet markers) so they can sit in a layer above the paint canvas —
+        // Leaflet's own panes live inside a transformed ancestor and can never out-rank
+        // a sibling element's z-index, no matter how high zIndexOffset is set.
         fetch(`${BASE_PATH}/geo/capitals.geojson`)
           .then((r) => r.json())
           .then((data) => {
             if (disposed) return;
-            const capitalMarkers: { marker: L.Marker; latlng: L.LatLng; iso: string; pop: number }[] = [];
-            const capitalsLayer = L.geoJSON(data, {
-              pointToLayer: (f, latlng) => {
-                const name = getCapitalNameEs(f.properties?.name || "");
-                const iso = (f.properties?.iso2 || "").toUpperCase();
-                const pop = Number(f.properties?.pop) || 0;
-                const icon = L.divIcon({
-                  className: "",
-                  html: `<div class="cap-mk"><div class="cap-dot"></div><span class="cap-nm">${name}</span></div>`,
-                  iconSize: [0, 0],
-                  iconAnchor: [3, 3],
-                });
-                const marker = L.marker(latlng, {
-                  icon,
-                  interactive: false,
-                  keyboard: false,
-                  zIndexOffset: 800,
-                });
-                capitalMarkers.push({ marker, latlng, iso, pop });
-                return marker;
-              },
+            const overlay = capitalsOverlayRef.current;
+            if (!overlay) return;
+
+            const capitalMarkers: { el: HTMLDivElement; latlng: L.LatLng; iso: string; pop: number }[] = [];
+            interface CapitalFeature {
+              geometry: { coordinates: [number, number] };
+              properties: { name?: string; iso2?: string; pop?: number };
+            }
+            (data.features as CapitalFeature[]).forEach((f) => {
+              const coords = f.geometry.coordinates;
+              const latlng = L.latLng(coords[1], coords[0]);
+              const name = getCapitalNameEs(f.properties?.name || "");
+              const iso = (f.properties?.iso2 || "").toUpperCase();
+              const pop = Number(f.properties?.pop) || 0;
+              const el = document.createElement("div");
+              el.className = "cap-mk";
+              el.style.position = "absolute";
+              el.style.left = "0";
+              el.style.top = "0";
+              el.innerHTML = `<div class="cap-dot"></div><span class="cap-nm">${name}</span>`;
+              overlay.appendChild(el);
+              capitalMarkers.push({ el, latlng, iso, pop });
             });
-            s.current.capitalsLayer = capitalsLayer;
             s.current.capitalMarkers = capitalMarkers;
-            s.current.refreshCapitals = () => declutter();
+            s.current.refreshCapitals = () => positionCapitals();
 
             // Bigger/more populated capitals win when two labels overlap on screen
             // (e.g. Rome vs. Vatican City, only ~2km apart)
             const byPopDesc = [...capitalMarkers].sort((a, b) => b.pop - a.pop);
 
-            function declutter() {
+            function positionCapitals() {
+              const visible = map.getZoom() >= CAPITALS_ZOOM;
+              if (!visible) {
+                capitalMarkers.forEach(({ el }) => (el.style.display = "none"));
+                return;
+              }
               const accepted: L.Point[] = [];
-              byPopDesc.forEach(({ marker, latlng, iso }) => {
-                const inner = marker.getElement()?.querySelector<HTMLElement>(".cap-mk");
-                if (!inner) return;
-                inner.classList.toggle("is-conquered", getStatus(iso) !== "none");
-
+              byPopDesc.forEach(({ el, latlng, iso }) => {
+                el.classList.toggle("is-conquered", getStatus(iso) !== "none");
                 const pt = map.latLngToContainerPoint(latlng);
                 const collision = accepted.some((a) => pt.distanceTo(a) < 26);
-                if (collision) {
-                  // Nudge this label clear of the one it would otherwise sit on top of
-                  inner.style.transform = "translate(11px, 10px)";
-                  accepted.push(pt.add([11, 10]));
-                } else {
-                  inner.style.transform = "";
-                  accepted.push(pt);
-                }
+                const offset = collision ? ([11, 10] as [number, number]) : ([0, 0] as [number, number]);
+                el.style.display = "";
+                el.style.transform = `translate(${pt.x + offset[0]}px, ${pt.y + offset[1]}px)`;
+                accepted.push(pt.add(offset));
               });
             }
 
-            const update = () => {
-              if (!s.current.capitalsLayer) return;
-              if (map.getZoom() >= CAPITALS_ZOOM) {
-                if (!map.hasLayer(s.current.capitalsLayer)) s.current.capitalsLayer.addTo(map);
-                declutter();
-              } else if (map.hasLayer(s.current.capitalsLayer)) {
-                map.removeLayer(s.current.capitalsLayer);
-              }
-            };
-            update();
-            map.on("zoom", update);
-            map.on("zoomend", update);
+            positionCapitals();
+            map.on("move", positionCapitals);
+            map.on("zoom", positionCapitals);
+            map.on("zoomend", positionCapitals);
           })
           .catch(() => {});
       }
@@ -853,6 +848,11 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
           ref={canvasRef}
           className="absolute inset-0"
           style={{ zIndex: 420, pointerEvents: "none" }}
+        />
+        <div
+          ref={capitalsOverlayRef}
+          className="absolute inset-0 overflow-hidden"
+          style={{ zIndex: 430, pointerEvents: "none" }}
         />
         <div ref={cursorRef} id="brush-cursor" />
       </div>
