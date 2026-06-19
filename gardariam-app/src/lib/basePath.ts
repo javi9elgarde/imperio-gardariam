@@ -1,1 +1,1 @@
-export const BASE_PATH = "/imperio-gardariam";
+export const BASE_PATH = "";
