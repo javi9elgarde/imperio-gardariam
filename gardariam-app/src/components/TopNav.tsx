@@ -21,7 +21,7 @@ export default function TopNav() {
         aria-label="Inicio"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/imperio-gardariam/logo.png" alt="Imperio Gardariam" className="h-full w-full object-cover" />
+        <img src="/logo.png" alt="Imperio Gardariam" className="h-full w-full object-cover" />
       </button>
       {LINKS.map((l) => (
         <button

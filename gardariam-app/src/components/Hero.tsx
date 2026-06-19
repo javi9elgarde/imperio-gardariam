@@ -47,7 +47,7 @@ export default function Hero() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/imperio-gardariam/logo.png"
+          src="/logo.png"
           alt="Imperio Gardariam"
           style={{ width: "100%", height: "auto", display: "block" }}
         />
