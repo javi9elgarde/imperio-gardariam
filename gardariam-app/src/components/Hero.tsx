@@ -33,16 +33,23 @@ export default function Hero() {
         }}
       />
 
+      <motion.h1
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, delay: 0.4, ease: EASE }}
+        className="font-display text-gold-glow relative z-10 text-3xl font-bold tracking-[0.3em] text-imperial-gold-bright uppercase sm:text-5xl"
+      >
+        Imperio
+      </motion.h1>
+
       <motion.div
-        initial={{ opacity: 0, scale: 0.82, y: 12 }}
+        initial={{ opacity: 0, scale: 0.85, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 1.3, ease: EASE }}
-        className="relative z-10"
+        transition={{ duration: 1.3, delay: 0.7, ease: EASE }}
+        className="relative z-10 mt-2"
         style={{
-          width: "clamp(180px, 24vw, 260px)",
-          borderRadius: "18px",
-          overflow: "hidden",
-          boxShadow: "0 0 80px rgba(200,144,40,0.3), 0 0 0 1px rgba(200,144,40,0.4)",
+          width: "clamp(220px, 32vw, 380px)",
+          filter: "drop-shadow(0 0 50px rgba(200,144,40,0.25))",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -52,15 +59,6 @@ export default function Hero() {
           style={{ width: "100%", height: "auto", display: "block" }}
         />
       </motion.div>
-
-      <motion.h1
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 0.7, ease: EASE }}
-        className="font-display text-gold-glow relative z-10 mt-8 text-4xl font-bold tracking-[0.18em] text-imperial-gold-bright uppercase sm:text-6xl"
-      >
-        Imperio Gardariam
-      </motion.h1>
 
       <motion.div
         initial={{ opacity: 0 }}

@@ -31,7 +31,7 @@ export default function HeroPhoto({ iso, name, coverPhoto, editable, onChange }:
             setDraft(coverPhoto);
             setEditing((e) => !e);
           }}
-          className="font-display absolute right-3 top-3 rounded-full border border-imperial-gold/30 bg-imperial-charcoal/70 px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] text-imperial-gold-bright backdrop-blur transition-colors hover:bg-imperial-charcoal/90"
+          className="font-display absolute left-3 top-3 rounded-full border border-imperial-gold/30 bg-imperial-charcoal/70 px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] text-imperial-gold-bright backdrop-blur transition-colors hover:bg-imperial-charcoal/90"
         >
           ⚜ Foto
         </button>

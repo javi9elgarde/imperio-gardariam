@@ -26,6 +26,7 @@ export interface Restaurant {
 
 export interface CountryData {
   coverPhoto: string;
+  videoUrl: string;
   visits: Visit[];
   restaurants: Restaurant[];
   highlights: string[];
@@ -33,6 +34,7 @@ export interface CountryData {
 
 export const EMPTY_COUNTRY_DATA: CountryData = {
   coverPhoto: "",
+  videoUrl: "",
   visits: [],
   restaurants: [],
   highlights: [],

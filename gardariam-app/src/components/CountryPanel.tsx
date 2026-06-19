@@ -6,6 +6,7 @@ import HeroPhoto from "@/components/panel/HeroPhoto";
 import HighlightsSection from "@/components/panel/HighlightsSection";
 import Lightbox from "@/components/panel/Lightbox";
 import RestaurantsSection from "@/components/panel/RestaurantsSection";
+import VideoSection from "@/components/panel/VideoSection";
 import VisitsSection from "@/components/panel/VisitsSection";
 import { useAuth } from "@/lib/auth";
 import { getCountryData, getStatus, setCountryData } from "@/lib/storage";
@@ -110,6 +111,11 @@ export default function CountryPanel({
         )}
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
+          <VideoSection
+            videoUrl={data.videoUrl}
+            editable={isAdmin}
+            onChange={(videoUrl: string) => persist({ ...data, videoUrl })}
+          />
           <VisitsSection
             visits={data.visits}
             editable={isAdmin}

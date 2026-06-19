@@ -19,3 +19,10 @@ export function flagUrl(iso: string): string {
   const code = iso.includes("-") ? iso.split("-")[0] : iso;
   return `https://flagcdn.com/w80/${code.toLowerCase()}.png`;
 }
+
+export function youtubeId(url: string): string | null {
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/,
+  );
+  return match ? match[1] : null;
+}

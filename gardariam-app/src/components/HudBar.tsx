@@ -9,8 +9,7 @@ interface HudBarProps {
   total: number;
   color: string;
   onColorChange: (hex: string) => void;
-  imperialView: boolean;
-  onToggleImperialView: () => void;
+  onResetView: () => void;
   iconBarOpen: boolean;
   onToggleIconBar: () => void;
   isAdmin: boolean;
@@ -21,8 +20,7 @@ export default function HudBar({
   total,
   color,
   onColorChange,
-  imperialView,
-  onToggleImperialView,
+  onResetView,
   iconBarOpen,
   onToggleIconBar,
   isAdmin,
@@ -74,14 +72,11 @@ export default function HudBar({
         {muted ? "🔇" : "🔊"}
       </button>
       <button
-        onClick={onToggleImperialView}
-        className={`font-display rounded-full border px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] transition-colors ${
-          imperialView
-            ? "border-imperial-gold bg-imperial-gold/20 text-imperial-gold-bright"
-            : "border-white/10 text-parchment-faint hover:border-imperial-gold/40"
-        }`}
+        onClick={onResetView}
+        title="Restablecer vista"
+        className="font-display rounded-full border border-white/10 px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] text-parchment-faint transition-colors hover:border-imperial-gold/40 hover:text-imperial-gold-bright"
       >
-        ⚜ Vista Imperial
+        ↺ Restablecer vista
       </button>
       {isAdmin && (
         <button

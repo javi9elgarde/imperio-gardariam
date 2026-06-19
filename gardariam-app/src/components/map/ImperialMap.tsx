@@ -29,6 +29,7 @@ import { getNameEs, getCapitalNameEs } from "@/lib/countryNamesEs";
 const BRUSH_PX = [9, 24, 52];
 const SPAIN_CCAA_ZOOM = 4.25;
 const CAPITALS_ZOOM = 4.5;
+const WORLD_BOUNDS = L.latLngBounds([[-65, -168], [82, 178]]);
 
 const ICON_EMOJIS: Record<string, string> = {
   battle: "⚔",
@@ -55,7 +56,7 @@ export interface ImperialMapHandle {
   setColor: (hex: string) => void;
   setBrushSize: (index: number) => void;
   toggleEraseMode: () => boolean;
-  toggleImperialView: () => boolean;
+  resetView: () => void;
   setIconMode: (type: string | null) => void;
   redraw: () => void;
 }
@@ -108,11 +109,6 @@ function hoverFor(status: ConquestStatus, color: string): L.PathOptions {
   if (status === "full") return { fillColor: lighten(color, 28), color: lighten(color, 70) };
   return { fillColor: "#c8a870", color: "#7a5a30" };
 }
-function imperialStyleFor(status: ConquestStatus, color: string): L.PathOptions {
-  if (status === "none" || status === "partial")
-    return { fillColor: "#c8ae80", fillOpacity: 0.88, color: "rgba(120,85,45,0.35)", weight: 0.5 };
-  return { fillColor: color, fillOpacity: 1, color: lighten(color, 60), weight: 2.4 };
-}
 
 function iconHtml(type: string, id: string): string {
   const emoji = ICON_EMOJIS[type] || "📍";
@@ -149,7 +145,6 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       currentBrush: 1,
       activeStroke: [] as [number, number][],
       currentPaintIso: null as string | null,
-      imperialView: false,
       iconMode: null as string | null,
     });
 
@@ -183,7 +178,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         return;
       }
 
-      layer.setStyle(s.current.imperialView ? imperialStyleFor(status, color) : styleFor(status, color));
+      layer.setStyle(styleFor(status, color));
     }
 
     function updateSpainVisibility() {
@@ -195,33 +190,8 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       } else {
         const status = getStatus("ES");
         const color = getConquestColor();
-        esLayer.setStyle(s.current.imperialView ? imperialStyleFor(status, color) : styleFor(status, color));
+        esLayer.setStyle(styleFor(status, color));
       }
-    }
-
-    function applyImperialStyles() {
-      const active = s.current.imperialView;
-      const color = getConquestColor();
-      const map = s.current.map;
-      Object.entries(s.current.geoLayers).forEach(([iso, layer]) => {
-        if (iso === "ES" && map && map.getZoom() >= SPAIN_CCAA_ZOOM) {
-          layer.setStyle({ fillOpacity: 0, color: "rgba(0,0,0,0)", weight: 0 });
-          return;
-        }
-        if (iso.startsWith("ES-")) {
-          const status = getStatus(iso);
-          layer.setStyle({
-            ...styleFor(status, color),
-            color: "rgba(200,144,40,0.55)",
-            dashArray: status === "none" ? "4,3" : "",
-            weight: 1.4,
-          });
-          return;
-        }
-        const status = getStatus(iso);
-        layer.setStyle(active ? imperialStyleFor(status, color) : styleFor(status, color));
-      });
-      containerRef.current?.classList.toggle("imperial-view", active);
     }
 
     function spawnAnnexBurst(map: L.Map, lat: number, lng: number, iso: string) {
@@ -547,10 +517,8 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         s.current.isEraseMode = !s.current.isEraseMode;
         return s.current.isEraseMode;
       },
-      toggleImperialView() {
-        s.current.imperialView = !s.current.imperialView;
-        applyImperialStyles();
-        return s.current.imperialView;
+      resetView() {
+        s.current.map?.fitBounds(WORLD_BOUNDS, { animate: true, padding: [0, 0] });
       },
       setIconMode(type: string | null) {
         s.current.iconMode = type;
@@ -586,8 +554,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
       });
       s.current.map = map;
 
-      const worldB = L.latLngBounds([[-65, -168], [82, 178]]);
-      map.fitBounds(worldB, { animate: false, padding: [0, 0] });
+      map.fitBounds(WORLD_BOUNDS, { animate: false, padding: [0, 0] });
       map.setMinZoom(map.getZoom());
       map.setMaxBounds(L.latLngBounds([-78, -182], [86, 184]));
 
@@ -655,9 +622,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
               if (s.current.isPaintMode) return;
               const oe = e.originalEvent as MouseEvent;
               onHover?.({ iso, name, status: getStatus(iso), x: oe.clientX, y: oe.clientY });
-              const base = s.current.imperialView
-                ? imperialStyleFor(getStatus(iso), getConquestColor())
-                : styleFor(getStatus(iso), getConquestColor());
+              const base = styleFor(getStatus(iso), getConquestColor());
               (layer as L.Path).setStyle({ ...base, ...hoverFor(getStatus(iso), getConquestColor()) });
             });
             layer.on("mousemove", (e: L.LeafletMouseEvent) => {
@@ -668,10 +633,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
             layer.on("mouseout", () => {
               if (s.current.isPaintMode) return;
               onHover?.(null);
-              const base = s.current.imperialView
-                ? imperialStyleFor(getStatus(iso), getConquestColor())
-                : styleFor(getStatus(iso), getConquestColor());
-              (layer as L.Path).setStyle(base);
+              (layer as L.Path).setStyle(styleFor(getStatus(iso), getConquestColor()));
             });
             layer.on("click", (e: L.LeafletMouseEvent) => {
               if (s.current.isPaintMode) return;
@@ -777,6 +739,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
           .then((r) => r.json())
           .then((data) => {
             if (disposed) return;
+            const capitalMarkers: { marker: L.Marker; latlng: L.LatLng }[] = [];
             const capitalsLayer = L.geoJSON(data, {
               pointToLayer: (f, latlng) => {
                 const name = getCapitalNameEs(f.properties?.name || "");
@@ -786,14 +749,36 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
                   iconSize: [0, 0],
                   iconAnchor: [3, 3],
                 });
-                return L.marker(latlng, { icon, interactive: false, keyboard: false, zIndexOffset: 800 });
+                const marker = L.marker(latlng, {
+                  icon,
+                  interactive: false,
+                  keyboard: false,
+                  zIndexOffset: 800,
+                });
+                capitalMarkers.push({ marker, latlng });
+                return marker;
               },
             });
             s.current.capitalsLayer = capitalsLayer;
+
+            // Hide capital labels that would overlap a nearby one at the current zoom
+            // (e.g. Rome / Vatican City are only ~2km apart and collide on screen)
+            function declutter() {
+              const accepted: L.Point[] = [];
+              capitalMarkers.forEach(({ marker, latlng }) => {
+                const pt = map.latLngToContainerPoint(latlng);
+                const overlaps = accepted.some((a) => pt.distanceTo(a) < 26);
+                const el = marker.getElement();
+                if (el) el.style.display = overlaps ? "none" : "";
+                if (!overlaps) accepted.push(pt);
+              });
+            }
+
             const update = () => {
               if (!s.current.capitalsLayer) return;
               if (map.getZoom() >= CAPITALS_ZOOM) {
                 if (!map.hasLayer(s.current.capitalsLayer)) s.current.capitalsLayer.addTo(map);
+                declutter();
               } else if (map.hasLayer(s.current.capitalsLayer)) {
                 map.removeLayer(s.current.capitalsLayer);
               }

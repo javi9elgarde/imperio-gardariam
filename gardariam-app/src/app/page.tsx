@@ -8,7 +8,6 @@ import BrushToolbar from "@/components/BrushToolbar";
 import CountryPanel from "@/components/CountryPanel";
 import Hero from "@/components/Hero";
 import HudBar from "@/components/HudBar";
-import ImperialOverlay from "@/components/ImperialOverlay";
 import type { HoverData, ImperialMapHandle } from "@/components/map/ImperialMap";
 import MapIconBar from "@/components/MapIconBar";
 import FlagRoom from "@/components/sections/FlagRoom";
@@ -16,9 +15,7 @@ import StatsSection from "@/components/sections/StatsSection";
 import Timeline from "@/components/sections/Timeline";
 import TopNav from "@/components/TopNav";
 import { useAuth } from "@/lib/auth";
-import { computeStats } from "@/lib/stats";
 import { onStorageChange } from "@/lib/storage";
-import { loadCountriesList, type CountryInfo } from "@/lib/worldData";
 import { flagUrl } from "@/lib/format";
 
 const ImperialMap = dynamic(() => import("@/components/map/ImperialMap"), {
@@ -45,18 +42,12 @@ export default function Home() {
   const [color, setColor] = useState("#8b1a2a");
   const [paintMode, setPaintMode] = useState(false);
   const [worldVersion, setWorldVersion] = useState(0);
-  const [imperialView, setImperialView] = useState(false);
   const [annex, setAnnex] = useState<{ iso: string; name: string; id: number } | null>(null);
-  const [countries, setCountries] = useState<CountryInfo[]>([]);
   const [hoverData, setHoverData] = useState<HoverData | null>(null);
   const [iconBarOpen, setIconBarOpen] = useState(false);
   const [activeIcon, setActiveIcon] = useState<string | null>(null);
   const annexIdRef = useRef(0);
   const lastAnnexRef = useRef<{ iso: string; at: number } | null>(null);
-
-  useEffect(() => {
-    loadCountriesList().then(setCountries);
-  }, []);
 
   useEffect(() => {
     return onStorageChange(() => {
@@ -98,8 +89,6 @@ export default function Home() {
     mapRef.current?.setIconMode(null);
   }
 
-  const stats = computeStats(countries);
-
   // Tooltip flag: strip province part for Spain
   const tooltipIso = hoverData?.iso.includes("-") ? hoverData.iso.split("-")[0] : hoverData?.iso;
 
@@ -132,11 +121,7 @@ export default function Home() {
             setColor(hex);
             mapRef.current?.setColor(hex);
           }}
-          imperialView={imperialView}
-          onToggleImperialView={() => {
-            const active = mapRef.current?.toggleImperialView() ?? false;
-            setImperialView(active);
-          }}
+          onResetView={() => mapRef.current?.resetView()}
           iconBarOpen={iconBarOpen}
           onToggleIconBar={() => {
             const next = !iconBarOpen;
@@ -148,10 +133,6 @@ export default function Home() {
           }}
           isAdmin={isAdmin}
         />
-
-        <AnimatePresence>
-          {imperialView && <ImperialOverlay stats={stats} />}
-        </AnimatePresence>
 
         <AnimatePresence>
           {paintMode && (
