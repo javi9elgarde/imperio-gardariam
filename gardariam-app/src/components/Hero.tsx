@@ -48,7 +48,7 @@ export default function Hero() {
         transition={{ duration: 1.3, delay: 0.7, ease: EASE }}
         className="relative z-10 mt-2"
         style={{
-          width: "clamp(220px, 32vw, 380px)",
+          width: "clamp(320px, 44vw, 540px)",
           filter: "drop-shadow(0 0 50px rgba(200,144,40,0.25))",
         }}
       >
