@@ -42,7 +42,9 @@ export default function FlagRoom({ onSelectCountry }: FlagRoomProps) {
         {countries.length > 0 && (
           <div className="grid grid-cols-6 gap-2.5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12">
             {countries.map((c, i) => {
-              const visited = getStatus(c.iso) !== "none";
+              const status = getStatus(c.iso);
+              const visited = status !== "none";
+              const full = status === "full";
               return (
                 <motion.button
                   key={c.iso}
@@ -53,9 +55,11 @@ export default function FlagRoom({ onSelectCountry }: FlagRoomProps) {
                   transition={{ duration: 0.3, delay: Math.min(i * 0.004, 0.4) }}
                   whileHover={visited ? { scale: 1.14, y: -3 } : { scale: 1.03 }}
                   className={`flag-tip relative flex flex-col items-center justify-center rounded-md border p-1.5 transition-colors ${
-                    visited
+                    full
                       ? "border-imperial-gold/35 bg-imperial-gold/5 shadow-[0_0_10px_rgba(200,144,40,0.15)]"
-                      : "border-white/5 bg-imperial-charcoal-3"
+                      : visited
+                        ? "border-white/60 bg-white/5 shadow-[0_0_10px_rgba(255,255,255,0.15)]"
+                        : "border-white/5 bg-imperial-charcoal-3"
                   }`}
                   data-tip={c.name}
                 >
@@ -68,8 +72,13 @@ export default function FlagRoom({ onSelectCountry }: FlagRoomProps) {
                       visited ? "" : "opacity-25 grayscale"
                     }`}
                   />
-                  {visited && (
+                  {full && (
                     <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-imperial-gold-bright shadow-[0_0_6px_rgba(240,197,66,0.85)]" />
+                  )}
+                  {visited && !full && (
+                    <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-imperial-charcoal-2 text-[0.5rem] leading-none text-white shadow-[0_0_6px_rgba(255,255,255,0.6)]">
+                      ⚔
+                    </span>
                   )}
                 </motion.button>
               );

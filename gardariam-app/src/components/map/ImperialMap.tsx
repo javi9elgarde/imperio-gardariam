@@ -503,6 +503,10 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         if (cursorRef.current) cursorRef.current.style.display = "none";
         s.current.map?.dragging.enable();
         s.current.map?.scrollWheelZoom.enable();
+        // The hover tooltip is frozen at whatever status it had before painting
+        // (the canvas ate all mouse events while painting) — clear it so it
+        // doesn't show stale info until the cursor genuinely moves again.
+        onHover?.(null);
       },
       getColor() {
         return getConquestColor();
