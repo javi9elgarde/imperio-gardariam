@@ -777,14 +777,20 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
             function declutter() {
               const accepted: L.Point[] = [];
               byPopDesc.forEach(({ marker, latlng, iso }) => {
+                const inner = marker.getElement()?.querySelector<HTMLElement>(".cap-mk");
+                if (!inner) return;
+                inner.classList.toggle("is-conquered", getStatus(iso) !== "none");
+
                 const pt = map.latLngToContainerPoint(latlng);
-                const overlaps = accepted.some((a) => pt.distanceTo(a) < 26);
-                const el = marker.getElement();
-                if (el) {
-                  el.style.display = overlaps ? "none" : "";
-                  el.classList.toggle("is-conquered", getStatus(iso) !== "none");
+                const collision = accepted.some((a) => pt.distanceTo(a) < 26);
+                if (collision) {
+                  // Nudge this label clear of the one it would otherwise sit on top of
+                  inner.style.transform = "translate(11px, 10px)";
+                  accepted.push(pt.add([11, 10]));
+                } else {
+                  inner.style.transform = "";
+                  accepted.push(pt);
                 }
-                if (!overlaps) accepted.push(pt);
               });
             }
 
