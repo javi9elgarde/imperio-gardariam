@@ -1,6 +1,14 @@
 import { getConquestMap, getCountryDataMap } from "./storage";
 import type { CountryInfo } from "./worldData";
 
+function resolveName(
+  iso: string,
+  countries: CountryInfo[],
+  provinceNames: Record<string, string>,
+): string {
+  return countries.find((c) => c.iso === iso)?.name ?? provinceNames[iso] ?? iso;
+}
+
 const REAL_CONTINENTS = [
   "Africa",
   "Asia",
@@ -23,7 +31,10 @@ export interface ImperialStats {
   busiestYear: { year: number; count: number } | null;
 }
 
-export function computeStats(countries: CountryInfo[]): ImperialStats {
+export function computeStats(
+  countries: CountryInfo[],
+  provinceNames: Record<string, string> = {},
+): ImperialStats {
   const conquestMap = getConquestMap();
   const dataMap = getCountryDataMap();
 
@@ -65,8 +76,7 @@ export function computeStats(countries: CountryInfo[]): ImperialStats {
   let mostVisitedCountry: ImperialStats["mostVisitedCountry"] = null;
   Object.entries(visitCountByIso).forEach(([iso, count]) => {
     if (!mostVisitedCountry || count > mostVisitedCountry.count) {
-      const info = countries.find((c) => c.iso === iso);
-      mostVisitedCountry = { iso, name: info?.name ?? iso, count };
+      mostVisitedCountry = { iso, name: resolveName(iso, countries, provinceNames), count };
     }
   });
 
@@ -99,17 +109,19 @@ export interface TimelineEntry {
   note: string;
 }
 
-export function computeTimeline(countries: CountryInfo[]): TimelineEntry[] {
+export function computeTimeline(
+  countries: CountryInfo[],
+  provinceNames: Record<string, string> = {},
+): TimelineEntry[] {
   const dataMap = getCountryDataMap();
   const entries: TimelineEntry[] = [];
 
   Object.entries(dataMap).forEach(([iso, data]) => {
-    const info = countries.find((c) => c.iso === iso);
     data.visits.forEach((v) => {
       if (!v.dateFrom) return;
       entries.push({
         iso,
-        name: info?.name ?? iso,
+        name: resolveName(iso, countries, provinceNames),
         region: v.region,
         dateFrom: v.dateFrom,
         dateTo: v.dateTo,

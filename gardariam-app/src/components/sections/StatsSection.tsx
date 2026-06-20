@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { loadProvinceNames } from "@/lib/provinces";
 import { computeStats } from "@/lib/stats";
 import { loadCountriesList, type CountryInfo } from "@/lib/worldData";
 
@@ -68,12 +69,14 @@ function StatCard({ value, label }: { value: string | number; label: string }) {
 
 export default function StatsSection() {
   const [countries, setCountries] = useState<CountryInfo[]>([]);
+  const [provinceNames, setProvinceNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadCountriesList().then(setCountries);
+    loadProvinceNames().then(setProvinceNames);
   }, []);
 
-  const stats = computeStats(countries);
+  const stats = computeStats(countries, provinceNames);
 
   return (
     <section

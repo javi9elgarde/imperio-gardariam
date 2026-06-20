@@ -24,6 +24,7 @@ import {
 import type { ConquestStatus, IconType, PaintStroke } from "@/lib/types";
 import { BASE_PATH } from "@/lib/basePath";
 import { playFanfare } from "@/lib/sound";
+import { slugify } from "@/lib/slug";
 import { getNameEs, getCapitalNameEs } from "@/lib/countryNamesEs";
 
 const BRUSH_PX = [9, 24, 52];
@@ -90,15 +91,6 @@ function lighten(hex: string, amt: number) {
   const c = hexRgb(hex);
   return `rgb(${Math.min(c.r + amt, 255)},${Math.min(c.g + amt, 255)},${Math.min(c.b + amt, 255)})`;
 }
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-}
-
 // partial: returns same style as none — the canvas paint layer shows the conquest color on top
 function styleFor(status: ConquestStatus, color: string): L.PathOptions {
   if (status === "full")
@@ -155,6 +147,19 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         (c) => getStatus(c.iso) !== "none",
       ).length;
       onConqueredCountChange(count);
+    }
+
+    // Conquering any Spanish province should be reflected on Spain itself —
+    // otherwise "ES" stays "Sin Conquistar" forever even with provinces conquered.
+    // One-directional only (never auto-downgrades) so it can't erase a status the
+    // user set manually (e.g. painting all of Spain directly, or marking it "full").
+    function syncSpainStatus() {
+      if (getStatus("ES") !== "none") return;
+      const anyProvinceConquered = s.current.provinceKeys.some((k) => getStatus(k) !== "none");
+      if (anyProvinceConquered) {
+        saveStatus("ES", "partial");
+        refreshStyle("ES");
+      }
     }
 
     function refreshStyle(iso: string) {
@@ -454,6 +459,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         refreshStyle(s.current.currentPaintIso);
         recomputeConqueredCount();
         s.current.refreshCapitals?.();
+        if (s.current.currentPaintIso.startsWith("ES-")) syncSpainStatus();
         triggerAnnexation(s.current.currentPaintIso);
       }
       redrawCanvas();
@@ -481,6 +487,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
         recomputeConqueredCount();
         redrawCanvas();
         s.current.refreshCapitals?.();
+        if (iso.startsWith("ES-")) syncSpainStatus();
         if (wasNone && status !== "none") triggerAnnexation(iso);
       },
       enterPaintMode(iso) {
@@ -728,6 +735,7 @@ const ImperialMap = forwardRef<ImperialMapHandle, ImperialMapProps>(
               },
             });
             s.current.spainProvinceLayer = spainProvinceLayer;
+            syncSpainStatus();
 
             const updateProvinceVisibility = () => {
               if (!s.current.spainProvinceLayer) return;

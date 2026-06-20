@@ -3,17 +3,20 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { flagUrl, formatDate } from "@/lib/format";
+import { loadProvinceNames } from "@/lib/provinces";
 import { computeTimeline } from "@/lib/stats";
 import { loadCountriesList, type CountryInfo } from "@/lib/worldData";
 
 export default function Timeline() {
   const [countries, setCountries] = useState<CountryInfo[]>([]);
+  const [provinceNames, setProvinceNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     loadCountriesList().then(setCountries);
+    loadProvinceNames().then(setProvinceNames);
   }, []);
 
-  const entries = computeTimeline(countries);
+  const entries = computeTimeline(countries, provinceNames);
 
   return (
     <section
