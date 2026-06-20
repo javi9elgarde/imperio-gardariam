@@ -87,7 +87,9 @@ function initFirestoreSync(): void {
   onSnapshot(collection(db, "countryData"), (snap) => {
     const next: Record<string, CountryData> = {};
     snap.forEach((d) => {
-      next[d.id] = d.data() as CountryData;
+      // Partial merge writes can leave a doc with only some fields (e.g. just
+      // videoUrl) — backfill the rest so consumers can always rely on the full shape.
+      next[d.id] = { ...EMPTY_COUNTRY_DATA, ...(d.data() as Partial<CountryData>) };
     });
     countryDataCache = next;
     notify();
