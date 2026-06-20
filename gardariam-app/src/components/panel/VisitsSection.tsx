@@ -9,6 +9,9 @@ interface VisitsSectionProps {
   editable: boolean;
   onChange: (visits: Visit[]) => void;
   onPhotoClick: (src: string) => void;
+  /** Read-only visits owned by sub-territories (e.g. Spain's provinces), shown
+   * for context but edited only from that province's own panel. */
+  provinceVisits?: { provinceName: string; visit: Visit }[];
 }
 
 const EMPTY: Visit = { region: "", dateFrom: "", dateTo: "", note: "", photos: [] };
@@ -17,7 +20,13 @@ const inputCls =
 const labelCls =
   "font-display mb-1 block text-[0.56rem] uppercase tracking-[0.12em] text-parchment-faint";
 
-export default function VisitsSection({ visits, editable, onChange, onPhotoClick }: VisitsSectionProps) {
+export default function VisitsSection({
+  visits,
+  editable,
+  onChange,
+  onPhotoClick,
+  provinceVisits = [],
+}: VisitsSectionProps) {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState<Visit>(EMPTY);
@@ -133,7 +142,7 @@ export default function VisitsSection({ visits, editable, onChange, onPhotoClick
           </div>
         )}
 
-        {visits.length === 0 && !showForm && (
+        {visits.length === 0 && provinceVisits.length === 0 && !showForm && (
           <p className="py-4 text-center text-xs italic text-parchment-faint">
             Sin expediciones registradas
           </p>
@@ -192,6 +201,50 @@ export default function VisitsSection({ visits, editable, onChange, onPhotoClick
             </div>
           ),
         )}
+
+        {provinceVisits.map(({ provinceName, visit: v }, i) => (
+          <div
+            key={`prov-${i}`}
+            className="rounded-lg border border-imperial-gold/15 bg-imperial-charcoal-2/60 p-3.5"
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="font-display rounded border border-imperial-gold/25 bg-imperial-gold/8 px-1.5 py-0.5 text-[0.52rem] uppercase tracking-[0.08em] text-imperial-gold-text">
+                📍 {provinceName}
+              </span>
+            </div>
+            <div className="font-display mt-1.5 text-sm font-semibold text-parchment">
+              {v.region || "Expedición"}
+            </div>
+            <div className="mt-0.5 text-[0.68rem] text-parchment-faint">
+              {v.dateFrom
+                ? `${formatDate(v.dateFrom)}${
+                    v.dateTo
+                      ? ` → ${formatDate(v.dateTo)} · ${daysBetween(v.dateFrom, v.dateTo)} días`
+                      : ""
+                  }`
+                : "—"}
+            </div>
+            {v.note && (
+              <p className="mt-1.5 text-[0.76rem] italic leading-relaxed text-parchment-dim">
+                {v.note}
+              </p>
+            )}
+            {v.photos.length > 0 && (
+              <div className="mt-2 grid grid-cols-3 gap-1">
+                {v.photos.slice(0, 6).map((src, pi) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={pi}
+                    src={src}
+                    alt=""
+                    onClick={() => onPhotoClick(src)}
+                    className="aspect-square cursor-zoom-in rounded object-cover transition-opacity hover:opacity-85"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

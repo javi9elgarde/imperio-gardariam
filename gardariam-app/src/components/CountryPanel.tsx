@@ -9,7 +9,14 @@ import RestaurantsSection from "@/components/panel/RestaurantsSection";
 import VideoSection from "@/components/panel/VideoSection";
 import VisitsSection from "@/components/panel/VisitsSection";
 import { useAuth } from "@/lib/auth";
-import { getCountryData, getStatus, onStorageChange, setCountryData } from "@/lib/storage";
+import { loadProvinceNames } from "@/lib/provinces";
+import {
+  getCountryData,
+  getCountryDataMap,
+  getStatus,
+  onStorageChange,
+  setCountryData,
+} from "@/lib/storage";
 import type { ConquestStatus, CountryData, Restaurant, Visit } from "@/lib/types";
 
 interface CountryPanelProps {
@@ -39,6 +46,36 @@ export default function CountryPanel({
   const [status, setStatus] = useState<ConquestStatus>(() => getStatus(iso));
   const [data, setData] = useState<CountryData>(() => getCountryData(iso));
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [provinceNames, setProvinceNames] = useState<Record<string, string>>({});
+  const [provinceVisits, setProvinceVisits] = useState<{ provinceName: string; visit: Visit }[]>([]);
+
+  // Spain's own panel additionally shows (read-only) every province's expeditions —
+  // each province still owns and edits its own list independently.
+  function refreshProvinceVisits(names: Record<string, string>) {
+    if (iso !== "ES") {
+      setProvinceVisits([]);
+      return;
+    }
+    const dataMap = getCountryDataMap();
+    const merged: { provinceName: string; visit: Visit }[] = [];
+    Object.entries(dataMap).forEach(([key, value]) => {
+      if (!key.startsWith("ES-")) return;
+      value.visits.forEach((visit) => {
+        merged.push({ provinceName: names[key] ?? key, visit });
+      });
+    });
+    merged.sort((a, b) => b.visit.dateFrom.localeCompare(a.visit.dateFrom));
+    setProvinceVisits(merged);
+  }
+
+  useEffect(() => {
+    if (iso !== "ES") return;
+    loadProvinceNames().then((names) => {
+      setProvinceNames(names);
+      refreshProvinceVisits(names);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [iso]);
 
   // Keep this panel's status/data in sync with live painting/Firestore updates —
   // otherwise it stays frozen at whatever it was when the panel first opened.
@@ -46,8 +83,10 @@ export default function CountryPanel({
     return onStorageChange(() => {
       setStatus(getStatus(iso));
       setData(getCountryData(iso));
+      refreshProvinceVisits(provinceNames);
     });
-  }, [iso]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [iso, provinceNames]);
 
   function persist(patch: Partial<CountryData>) {
     setData((prev) => ({ ...prev, ...patch }));
@@ -130,6 +169,7 @@ export default function CountryPanel({
             editable={isAdmin}
             onChange={(visits: Visit[]) => persist({ visits })}
             onPhotoClick={setLightboxSrc}
+            provinceVisits={provinceVisits}
           />
           <RestaurantsSection
             restaurants={data.restaurants}
