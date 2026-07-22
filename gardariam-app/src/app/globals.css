@@ -517,3 +517,142 @@ body {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ===== Sala de Conquista (portada interactiva de Viajes) ===== */
+.room-section {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--color-imperial-charcoal);
+}
+.room-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(42px) brightness(0.42);
+  transform: scale(1.16);
+}
+.room-tint {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 11, 23, 0.4);
+}
+/* La escena conserva la proporción del lienzo (16:9) y encaja entera */
+.room-scene {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1672 / 941;
+  width: min(100vw, calc(100vh * 1672 / 941));
+  height: min(100vh, calc(100vw * 941 / 1672));
+  animation: room-fade 1.1s var(--ease-imperial) both;
+}
+@keyframes room-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.room-base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  user-select: none;
+}
+/* Cada objeto: botón invisible sobre su posición exacta */
+.room-obj {
+  position: absolute;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.room-obj-img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  opacity: 0;
+  transition:
+    opacity 0.3s var(--ease-imperial),
+    filter 0.3s var(--ease-imperial),
+    transform 0.3s var(--ease-imperial);
+}
+.room-obj:hover .room-obj-img,
+.room-obj:focus-visible .room-obj-img {
+  opacity: 1;
+  transform: scale(1.03);
+  filter: brightness(1.14)
+    drop-shadow(0 0 10px rgba(240, 197, 66, 0.9))
+    drop-shadow(0 0 24px rgba(240, 197, 66, 0.55));
+}
+/* Etiqueta emergente encima del objeto */
+.room-obj-label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%) translateY(6px);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  font-family: var(--font-display), serif;
+  text-transform: uppercase;
+  font-size: clamp(0.58rem, 1vw, 0.76rem);
+  letter-spacing: 0.14em;
+  color: var(--color-imperial-gold-bright);
+  background: rgba(7, 11, 23, 0.88);
+  border: 1px solid rgba(200, 144, 40, 0.45);
+  padding: 0.32em 0.75em;
+  border-radius: 999px;
+  text-shadow: 0 0 12px rgba(200, 144, 40, 0.5);
+  transition:
+    opacity 0.25s var(--ease-imperial),
+    transform 0.25s var(--ease-imperial);
+}
+.room-obj:hover .room-obj-label,
+.room-obj:focus-visible .room-obj-label {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+/* Pista de scroll */
+.room-hint {
+  position: absolute;
+  bottom: 1.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  color: var(--color-imperial-gold-bright);
+  font-size: 1.4rem;
+  opacity: 0.7;
+  animation: room-bob 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes room-bob {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(7px);
+  }
+}
+/* En pantallas táctiles: etiquetas siempre visibles (no hay hover) */
+@media (hover: none) {
+  .room-obj-label {
+    opacity: 0.92;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    padding: 0.26em 0.6em;
+  }
+}

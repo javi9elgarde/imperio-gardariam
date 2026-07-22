@@ -5,8 +5,8 @@ import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import AnnexToast from "@/components/AnnexToast";
 import BrushToolbar from "@/components/BrushToolbar";
+import ConquestRoom from "@/components/ConquestRoom";
 import CountryPanel from "@/components/CountryPanel";
-import Hero from "@/components/Hero";
 import HudBar from "@/components/HudBar";
 import type { HoverData, ImperialMapHandle } from "@/components/map/ImperialMap";
 import MapIconBar from "@/components/MapIconBar";
@@ -95,7 +95,7 @@ export default function Home() {
   return (
     <>
       <TopNav />
-      <Hero />
+      <ConquestRoom />
 
       <section id="mapa" className="relative h-screen w-full bg-imperial-charcoal">
         <ImperialMap
