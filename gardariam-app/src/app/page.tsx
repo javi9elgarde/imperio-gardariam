@@ -4,8 +4,9 @@ import { AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import AnnexToast from "@/components/AnnexToast";
+import BackToRoom from "@/components/BackToRoom";
 import BrushToolbar from "@/components/BrushToolbar";
-import ConquestRoom from "@/components/ConquestRoom";
+import ConquestRoom, { type RoomTarget } from "@/components/ConquestRoom";
 import CountryPanel from "@/components/CountryPanel";
 import HudBar from "@/components/HudBar";
 import type { HoverData, ImperialMapHandle } from "@/components/map/ImperialMap";
@@ -13,10 +14,11 @@ import MapIconBar from "@/components/MapIconBar";
 import FlagRoom from "@/components/sections/FlagRoom";
 import StatsSection from "@/components/sections/StatsSection";
 import Timeline from "@/components/sections/Timeline";
-import TopNav from "@/components/TopNav";
 import { useAuth } from "@/lib/auth";
 import { onStorageChange } from "@/lib/storage";
 import { flagUrl } from "@/lib/format";
+
+type View = "sala" | "mapa" | "banderas" | "cronologia" | "estadisticas";
 
 const ImperialMap = dynamic(() => import("@/components/map/ImperialMap"), {
   ssr: false,
@@ -34,8 +36,9 @@ const STATUS_CLASS: Record<string, string> = {
 };
 
 export default function Home() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user, loading, signIn, signOutUser } = useAuth();
   const mapRef = useRef<ImperialMapHandle>(null);
+  const [view, setView] = useState<View>("sala");
   const [selected, setSelected] = useState<{ iso: string; name: string } | null>(null);
   const [count, setCount] = useState(0);
   const [total, setTotal] = useState(195);
@@ -89,15 +92,48 @@ export default function Home() {
     mapRef.current?.setIconMode(null);
   }
 
+  function navigate(target: RoomTarget) {
+    if (target === "hub") {
+      window.location.href = "https://gardariam.com";
+      return;
+    }
+    setView(target);
+  }
+
+  function backToRoom() {
+    // cerrar cualquier overlay del mapa al salir
+    setSelected(null);
+    setPaintMode(false);
+    setIconBarOpen(false);
+    setActiveIcon(null);
+    mapRef.current?.setIconMode(null);
+    setHoverData(null);
+    setView("sala");
+  }
+
   // Tooltip flag: strip province part for Spain
   const tooltipIso = hoverData?.iso.includes("-") ? hoverData.iso.split("-")[0] : hoverData?.iso;
 
   return (
-    <>
-      <TopNav />
-      <ConquestRoom />
+    <div className="viajes-app">
+      {/* ===== Sala (portada, fija) ===== */}
+      <div className={`view-layer ${view === "sala" ? "active" : ""}`}>
+        <ConquestRoom onNavigate={navigate} />
+        {/* Login de admin discreto en una esquina */}
+        {!loading && (
+          <button
+            onClick={() => (user ? signOutUser() : signIn())}
+            title={user ? `Sesión: ${user.email}` : "Iniciar sesión"}
+            className="admin-corner"
+          >
+            {user ? (isAdmin ? "⚜ Admin" : "Salir") : "Iniciar sesión"}
+          </button>
+        )}
+      </div>
 
-      <section id="mapa" className="relative h-screen w-full bg-imperial-charcoal">
+      {/* ===== Zona: Mapa ===== */}
+      <div className={`view-layer ${view === "mapa" ? "active" : ""}`}>
+      <section id="mapa" className="relative h-full w-full bg-imperial-charcoal">
         <ImperialMap
           ref={mapRef}
           onSelectCountry={selectCountry}
@@ -170,10 +206,26 @@ export default function Home() {
           </div>
         )}
       </section>
+        {!paintMode && <BackToRoom onClick={backToRoom} />}
+      </div>
 
-      <FlagRoom worldVersion={worldVersion} onSelectCountry={selectCountry} />
-      <Timeline />
-      <StatsSection />
+      {/* ===== Zona: Banderas ===== */}
+      <div className={`view-layer ${view === "banderas" ? "active" : ""}`}>
+        <FlagRoom worldVersion={worldVersion} onSelectCountry={selectCountry} />
+        <BackToRoom onClick={backToRoom} />
+      </div>
+
+      {/* ===== Zona: Cronología ===== */}
+      <div className={`view-layer ${view === "cronologia" ? "active" : ""}`}>
+        <Timeline />
+        <BackToRoom onClick={backToRoom} />
+      </div>
+
+      {/* ===== Zona: Estadísticas ===== */}
+      <div className={`view-layer ${view === "estadisticas" ? "active" : ""}`}>
+        <StatsSection />
+        <BackToRoom onClick={backToRoom} />
+      </div>
 
       <AnnexToast annex={annex} />
 
@@ -189,7 +241,6 @@ export default function Home() {
               mapRef.current?.setCountryStatus(selected.iso, status)
             }
             onConquistar={() => {
-              document.getElementById("mapa")?.scrollIntoView({ behavior: "smooth" });
               mapRef.current?.enterPaintMode(selected.iso);
               setPaintMode(true);
               setSelected(null);
@@ -197,6 +248,6 @@ export default function Home() {
           />
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }

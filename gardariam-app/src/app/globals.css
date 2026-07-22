@@ -656,3 +656,91 @@ body {
     padding: 0.26em 0.6em;
   }
 }
+
+/* ===== App de vistas (Sala → Zonas), sin scroll de página ===== */
+.viajes-app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+.view-layer {
+  position: fixed;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s var(--ease-imperial);
+  z-index: 10;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.view-layer.active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 30;
+}
+/* La sala llena su capa exactamente (sin scroll interno) */
+.view-layer .room-section {
+  height: 100%;
+  min-height: 0;
+}
+
+/* Botón "Volver a la Sala" */
+.back-to-room {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display), serif;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--color-imperial-gold-bright);
+  background: rgba(7, 11, 23, 0.82);
+  border: 1px solid rgba(200, 144, 40, 0.45);
+  padding: 0.6em 1.05em;
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.12s ease;
+}
+.back-to-room:hover {
+  border-color: rgba(240, 197, 66, 0.9);
+  box-shadow: 0 0 22px rgba(200, 144, 40, 0.3);
+}
+.back-to-room:active {
+  transform: scale(0.97);
+}
+
+/* Login de admin discreto (esquina de la Sala) */
+.admin-corner {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 40;
+  font-family: var(--font-display), serif;
+  text-transform: uppercase;
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  color: var(--color-parchment-faint);
+  background: rgba(7, 11, 23, 0.7);
+  border: 1px solid rgba(200, 144, 40, 0.28);
+  padding: 0.5em 0.9em;
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.admin-corner:hover {
+  color: var(--color-imperial-gold-bright);
+  border-color: rgba(200, 144, 40, 0.6);
+}
