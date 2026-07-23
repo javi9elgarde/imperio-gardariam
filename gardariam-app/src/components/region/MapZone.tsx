@@ -54,7 +54,7 @@ export default function MapZone({ onSelectCountry, onBackToRoom }: MapZoneProps)
               onClick={() => r.discovered && setRegion(r.id)}
               style={
                 r.discovered
-                  ? { backgroundImage: "url(/mapas/europa/base.png)" }
+                  ? { backgroundImage: "url(/mapas/europa/base.jpg)" }
                   : undefined
               }
             >

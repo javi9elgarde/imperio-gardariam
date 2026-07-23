@@ -902,15 +902,18 @@ body {
   height: 100%;
   object-fit: fill;
   display: block;
+  opacity: 0;
   transition:
+    opacity 0.25s var(--ease-imperial),
     filter 0.25s var(--ease-imperial),
     transform 0.25s var(--ease-imperial);
 }
 .emap-country:hover .emap-country-img,
 .emap-country:focus-visible .emap-country-img {
-  filter: brightness(1.15) drop-shadow(0 0 8px rgba(240, 197, 66, 0.9))
-    drop-shadow(0 0 18px rgba(240, 197, 66, 0.55));
-  transform: scale(1.05);
+  opacity: 1;
+  filter: brightness(1.18) drop-shadow(0 0 8px rgba(240, 197, 66, 0.95))
+    drop-shadow(0 0 18px rgba(240, 197, 66, 0.6));
+  transform: scale(1.04);
 }
 .emap-tip {
   position: absolute;
@@ -941,6 +944,16 @@ body {
 .emap-country:hover .emap-tip,
 .emap-country:focus-visible .emap-tip {
   opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+/* Países de la mitad superior: etiqueta debajo para que no se corte */
+.emap-country.tip-below .emap-tip {
+  bottom: auto;
+  top: calc(100% + 8px);
+  transform: translateX(-50%) translateY(-6px);
+}
+.emap-country.tip-below:hover .emap-tip,
+.emap-country.tip-below:focus-visible .emap-tip {
   transform: translateX(-50%) translateY(0);
 }
 .emap-tip-flag {
