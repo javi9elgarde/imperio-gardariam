@@ -23,6 +23,7 @@ const CONQUERED: ConqueredCountry[] = [
   { iso: "AT", name: "Austria", img: "/mapas/europa/at.png", left: 45.29, top: 53.57, width: 11.27, height: 7.31 },
   { iso: "SK", name: "Eslovaquia", img: "/mapas/europa/sk.png", left: 55.99, top: 51.78, width: 9.27, height: 5.53 },
   { iso: "HU", name: "Hungría", img: "/mapas/europa/hu.png", left: 54.85, top: 53.92, width: 13.62, height: 10.34 },
+  { iso: "IT", name: "Italia", img: "/mapas/europa/it.png", left: 38.87, top: 58.91, width: 20.47, height: 30.3 },
 ];
 
 interface EuropeMapProps {
