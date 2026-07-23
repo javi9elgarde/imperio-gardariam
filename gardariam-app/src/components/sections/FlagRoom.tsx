@@ -1,10 +1,28 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { flagUrl } from "@/lib/format";
-import { getStatus } from "@/lib/storage";
-import { loadCountriesList, type CountryInfo } from "@/lib/worldData";
+interface ConqueredFlag {
+  iso: string;
+  name: string;
+  img: string;
+  /* posición en % del lienzo (1672×941) */
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+const FLAGS: ConqueredFlag[] = [
+  { iso: "DE", name: "Alemania", img: "/banderas/de.png", left: 42.88, top: 22.21, width: 3.29, height: 3.4 },
+  { iso: "AT", name: "Austria", img: "/banderas/at.png", left: 46.65, top: 26.35, width: 3.23, height: 3.51 },
+  { iso: "BE", name: "Bélgica", img: "/banderas/be.png", left: 69.2, top: 26.35, width: 3.35, height: 3.51 },
+  { iso: "VA", name: "Ciudad del Vaticano", img: "/banderas/va.png", left: 27.63, top: 39.11, width: 3.35, height: 3.4 },
+  { iso: "SK", name: "Eslovaquia", img: "/banderas/sk.png", left: 54.13, top: 43.36, width: 3.29, height: 3.4 },
+  { iso: "ES", name: "España", img: "/banderas/es.png", left: 61.66, top: 43.36, width: 3.35, height: 3.4 },
+  { iso: "HU", name: "Hungría", img: "/banderas/hu.png", left: 69.2, top: 51.86, width: 3.35, height: 3.4 },
+  { iso: "IT", name: "Italia", img: "/banderas/it.png", left: 42.88, top: 60.26, width: 3.29, height: 3.4 },
+  { iso: "LU", name: "Luxemburgo", img: "/banderas/lu.png", left: 69.2, top: 64.61, width: 3.35, height: 3.4 },
+  { iso: "PT", name: "Portugal", img: "/banderas/pt.png", left: 57.89, top: 73.01, width: 3.29, height: 3.51 },
+];
 
 interface FlagRoomProps {
   worldVersion: number;
@@ -12,84 +30,40 @@ interface FlagRoomProps {
 }
 
 export default function FlagRoom({ onSelectCountry }: FlagRoomProps) {
-  const [countries, setCountries] = useState<CountryInfo[]>([]);
-
-  useEffect(() => {
-    loadCountriesList().then(setCountries);
-  }, []);
-
-  const conqueredCount = countries.filter((c) => getStatus(c.iso) !== "none").length;
-
   return (
-    <section
-      id="banderas"
-      className="relative w-full bg-imperial-charcoal-2 px-6 py-24"
-    >
-      <div className="mx-auto max-w-5xl">
-        <motion.h2
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-gold-glow font-display mb-2 text-center text-2xl font-bold uppercase tracking-[0.14em] text-imperial-gold-bright sm:text-3xl"
-        >
-          ⚔ Sala de Banderas
-        </motion.h2>
-        <p className="mb-10 text-center text-[0.7rem] uppercase tracking-[0.22em] text-parchment-faint">
-          {conqueredCount} / {countries.length} conquistados
-        </p>
+    <div className="froom-wrap">
+      <div className="froom-scene">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className="froom-base"
+          src="/banderas/base.jpg"
+          alt="Sala de Banderas"
+          draggable={false}
+        />
 
-        {countries.length > 0 && (
-          <div className="grid grid-cols-6 gap-2.5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12">
-            {countries.map((c, i) => {
-              const status = getStatus(c.iso);
-              const visited = status !== "none";
-              const full = status === "full";
-              return (
-                <motion.button
-                  key={c.iso}
-                  onClick={() => onSelectCountry(c.iso, c.name)}
-                  initial={{ opacity: 0, scale: 0.85 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.3, delay: Math.min(i * 0.004, 0.4) }}
-                  whileHover={visited ? { scale: 1.14, y: -3 } : { scale: 1.03 }}
-                  className={`flag-tip relative flex flex-col items-center justify-center rounded-md border p-1.5 transition-colors ${
-                    full
-                      ? "border-imperial-gold/35 bg-imperial-gold/5 shadow-[0_0_10px_rgba(200,144,40,0.15)]"
-                      : visited
-                        ? "border-white/60 bg-white/5 shadow-[0_0_10px_rgba(255,255,255,0.15)]"
-                        : "border-white/5 bg-imperial-charcoal-3"
-                  }`}
-                  data-tip={c.name}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={flagUrl(c.iso)}
-                    alt={c.name}
-                    loading="lazy"
-                    className={`h-6 w-9 rounded-sm object-cover transition-all ${
-                      visited ? "" : "opacity-25 grayscale"
-                    }`}
-                  />
-                  {full && (
-                    <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-imperial-gold-bright shadow-[0_0_6px_rgba(240,197,66,0.85)]" />
-                  )}
-                  {visited && !full && (
-                    <span className="absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-imperial-charcoal-2 text-[0.5rem] leading-none text-white shadow-[0_0_6px_rgba(255,255,255,0.6)]">
-                      ⚔
-                    </span>
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
-        )}
-
-        {countries.length === 0 && (
-          <p className="text-center text-xs text-parchment-faint">Cargando territorios…</p>
-        )}
+        {FLAGS.map((f) => {
+          const tipBelow = f.top < 32;
+          return (
+            <button
+              key={f.iso}
+              type="button"
+              className={`froom-flag ${tipBelow ? "tip-below" : ""}`}
+              aria-label={f.name}
+              onClick={() => onSelectCountry(f.iso, f.name)}
+              style={{
+                left: `${f.left}%`,
+                top: `${f.top}%`,
+                width: `${f.width}%`,
+                height: `${f.height}%`,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="froom-flag-img" src={f.img} alt="" draggable={false} />
+              <span className="froom-tip">{f.name}</span>
+            </button>
+          );
+        })}
       </div>
-    </section>
+    </div>
   );
 }
