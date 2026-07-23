@@ -110,13 +110,9 @@ export default function CountryPanel({
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        className="glass-panel fixed inset-y-0 right-0 z-[800] flex w-full max-w-sm flex-col overflow-hidden border-l border-imperial-gold/20"
+        className="pergamino-panel fixed inset-y-0 right-0 z-[800] flex w-full max-w-sm flex-col overflow-hidden"
       >
-        <button
-          onClick={onClose}
-          aria-label="Cerrar"
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-imperial-gold/25 bg-imperial-charcoal/70 text-parchment-faint backdrop-blur transition-colors hover:border-imperial-gold hover:text-imperial-gold-bright"
-        >
+        <button onClick={onClose} aria-label="Cerrar" className="pnl-close">
           ✕
         </button>
 
@@ -128,6 +124,7 @@ export default function CountryPanel({
           onChange={(url) => persist({ coverPhoto: url })}
         />
 
+        <div className="pergamino-body flex flex-1 flex-col overflow-hidden">
         {isAdmin ? (
           <div className="flex flex-shrink-0 gap-2 px-5 pt-4">
             {BUTTONS.map((b) => (
@@ -181,6 +178,7 @@ export default function CountryPanel({
             editable={isAdmin}
             onChange={(highlights: string[]) => persist({ highlights })}
           />
+        </div>
         </div>
       </motion.aside>
 

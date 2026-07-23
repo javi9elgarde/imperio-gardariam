@@ -924,18 +924,23 @@ body {
   align-items: center;
   gap: 0.5em;
   white-space: nowrap;
+  width: max-content;
+  max-width: none;
   opacity: 0;
   pointer-events: none;
   font-family: var(--font-display), serif;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   font-size: 0.72rem;
-  color: var(--color-parchment);
-  background: rgba(7, 11, 23, 0.92);
-  border: 1px solid rgba(200, 144, 40, 0.5);
-  padding: 0.4em 0.75em;
-  border-radius: 8px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+  color: #3a2c1a;
+  background: linear-gradient(#f3e9ce, #e3d3ac);
+  border: 1px solid rgba(120, 80, 30, 0.7);
+  padding: 0.4em 0.8em;
+  border-radius: 7px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3);
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;
@@ -961,4 +966,120 @@ body {
   height: auto;
   border-radius: 2px;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Panel de país: reskin pergamino medieval ===== */
+.pergamino-panel {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(190, 160, 110, 0.28), transparent 42%),
+    radial-gradient(circle at 85% 88%, rgba(150, 115, 65, 0.22), transparent 46%),
+    linear-gradient(160deg, #efe4c6 0%, #e6d6b2 55%, #dcc9a0 100%);
+  border-left: 3px solid #9c6a1e !important;
+  box-shadow:
+    inset 0 0 70px rgba(120, 90, 50, 0.28),
+    -12px 0 44px rgba(0, 0, 0, 0.55);
+  color: #3a2c1a;
+}
+.pnl-close {
+  position: absolute;
+  right: 0.75rem;
+  top: 0.75rem;
+  z-index: 10;
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(120, 80, 30, 0.5);
+  background: rgba(60, 20, 26, 0.82);
+  color: #f0c542;
+  backdrop-filter: blur(4px);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.12s ease;
+}
+.pnl-close:hover {
+  background: rgba(92, 26, 34, 0.94);
+  border-color: #c8a030;
+}
+.pnl-close:active {
+  transform: scale(0.94);
+}
+
+/* Reskin de las utilidades del tema oscuro dentro del cuerpo del panel */
+.pergamino-body {
+  color: #3a2c1a;
+}
+.pergamino-body .text-parchment {
+  color: #3a2c1a;
+}
+.pergamino-body .text-parchment-dim {
+  color: #5a4a32;
+}
+.pergamino-body .text-parchment-faint {
+  color: #7c6a48;
+}
+.pergamino-body .text-parchment-faint\/40 {
+  color: rgba(124, 106, 72, 0.5);
+}
+.pergamino-body .text-imperial-gold-bright,
+.pergamino-body .text-imperial-gold-text,
+.pergamino-body .text-imperial-gold {
+  color: #7c3a12;
+}
+.pergamino-body .bg-imperial-charcoal-2,
+.pergamino-body .bg-imperial-charcoal-2\/60 {
+  background-color: #f4ecd4;
+}
+.pergamino-body .bg-imperial-charcoal-3 {
+  background-color: #e8dbba;
+}
+.pergamino-body .bg-imperial-gold\/18,
+.pergamino-body .bg-imperial-gold\/20 {
+  background-color: rgba(139, 26, 42, 0.14);
+}
+.pergamino-body .bg-imperial-gold\/10,
+.pergamino-body .bg-imperial-gold\/8 {
+  background-color: rgba(160, 110, 30, 0.14);
+}
+.pergamino-body .border-white\/10 {
+  border-color: rgba(90, 60, 30, 0.22);
+}
+.pergamino-body .border-imperial-gold\/15 {
+  border-color: rgba(120, 80, 30, 0.3);
+}
+.pergamino-body .border-imperial-gold\/20 {
+  border-color: rgba(120, 80, 30, 0.34);
+}
+.pergamino-body .border-imperial-gold\/25 {
+  border-color: rgba(120, 80, 30, 0.4);
+}
+.pergamino-body .border-imperial-gold\/30 {
+  border-color: rgba(120, 80, 30, 0.46);
+}
+.pergamino-body .border-imperial-gold\/40 {
+  border-color: rgba(140, 90, 30, 0.55);
+}
+.pergamino-body .border-imperial-gold {
+  border-color: #9c6a1e;
+}
+.pergamino-body .hover\:bg-imperial-gold\/18:hover {
+  background-color: rgba(139, 26, 42, 0.2);
+}
+.pergamino-body .hover\:border-imperial-gold\/40:hover {
+  border-color: rgba(140, 90, 30, 0.6);
+}
+.pergamino-body .hover\:border-imperial-gold:hover {
+  border-color: #9c6a1e;
+}
+.pergamino-body .hover\:text-imperial-gold-bright:hover {
+  color: #7c3a12;
+}
+.pergamino-body input {
+  color: #3a2c1a;
+}
+.pergamino-body input::placeholder {
+  color: rgba(90, 70, 40, 0.6);
 }
