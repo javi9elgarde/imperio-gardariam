@@ -1176,3 +1176,34 @@ body {
 .froom-flag.tip-below:focus-visible .froom-tip {
   transform: translateX(-50%) translateY(0);
 }
+
+/* Sala de Banderas: variantes escritorio / móvil */
+.froom-scene-movil {
+  display: none;
+  aspect-ratio: 941 / 1672;
+  width: min(100vw, calc(100vh * 941 / 1672));
+  height: min(100vh, calc(100vw * 1672 / 941));
+}
+.froom-flag-box {
+  position: absolute;
+  inset: -8%;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(240, 197, 66, 0.28), transparent 72%);
+  box-shadow: inset 0 0 0 2px rgba(240, 197, 66, 0.9);
+  transition: opacity 0.2s var(--ease-imperial);
+}
+.froom-flag:hover .froom-flag-box,
+.froom-flag:focus-visible .froom-flag-box,
+.froom-flag:active .froom-flag-box {
+  opacity: 1;
+}
+@media (orientation: portrait) {
+  .froom-scene-desktop {
+    display: none;
+  }
+  .froom-scene-movil {
+    display: block;
+  }
+}

@@ -24,6 +24,23 @@ const FLAGS: ConqueredFlag[] = [
   { iso: "PT", name: "Portugal", img: "/banderas/pt.png", left: 57.89, top: 73.01, width: 3.29, height: 3.51 },
 ];
 
+/* Versión móvil (imagen vertical 941×1672, banderas ya pintadas en la base) */
+const FLAGS_MOVIL: { iso: string; name: string; left: number; top: number }[] = [
+  { iso: "DE", name: "Alemania", left: 39.35, top: 28.5 },
+  { iso: "LU", name: "Luxemburgo", left: 47.15, top: 34.5 },
+  { iso: "BE", name: "Bélgica", left: 70.35, top: 34.5 },
+  { iso: "VA", name: "Ciudad del Vaticano", left: 23.75, top: 40.7 },
+  { iso: "AT", name: "Austria", left: 54.85, top: 47.0 },
+  { iso: "SK", name: "Eslovaquia", left: 62.65, top: 50.1 },
+  { iso: "HU", name: "Hungría", left: 70.35, top: 53.2 },
+  { iso: "IT", name: "Italia", left: 39.35, top: 56.3 },
+  { iso: "NL", name: "Países Bajos", left: 70.35, top: 59.4 },
+  { iso: "PT", name: "Portugal", left: 23.85, top: 62.5 },
+  { iso: "ES", name: "España", left: 54.85, top: 65.6 },
+];
+const FMOV_W = 6.5;
+const FMOV_H = 4.0;
+
 interface FlagRoomProps {
   worldVersion: number;
   onSelectCountry: (iso: string, name: string) => void;
@@ -32,7 +49,8 @@ interface FlagRoomProps {
 export default function FlagRoom({ onSelectCountry }: FlagRoomProps) {
   return (
     <div className="froom-wrap">
-      <div className="froom-scene">
+      {/* Escritorio */}
+      <div className="froom-scene froom-scene-desktop">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="froom-base"
@@ -59,6 +77,38 @@ export default function FlagRoom({ onSelectCountry }: FlagRoomProps) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="froom-flag-img" src={f.img} alt="" draggable={false} />
+              <span className="froom-tip">{f.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Móvil (imagen vertical) */}
+      <div className="froom-scene froom-scene-movil">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className="froom-base"
+          src="/banderas/base-movil.jpg"
+          alt="Sala de Banderas"
+          draggable={false}
+        />
+        {FLAGS_MOVIL.map((f) => {
+          const tipBelow = f.top < 34;
+          return (
+            <button
+              key={f.iso}
+              type="button"
+              className={`froom-flag ${tipBelow ? "tip-below" : ""}`}
+              aria-label={f.name}
+              onClick={() => onSelectCountry(f.iso, f.name)}
+              style={{
+                left: `${f.left}%`,
+                top: `${f.top}%`,
+                width: `${FMOV_W}%`,
+                height: `${FMOV_H}%`,
+              }}
+            >
+              <span className="froom-flag-box" />
               <span className="froom-tip">{f.name}</span>
             </button>
           );
