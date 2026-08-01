@@ -41,7 +41,13 @@ export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
   const [pts, setPts] = useState<{ x: number; y: number }[]>([]);
 
   useEffect(() => {
-    setPick(typeof window !== "undefined" && window.location.hash === "#zonas");
+    const check = () =>
+      setPick(
+        window.location.hash === "#zonas" || window.location.search.includes("zonas"),
+      );
+    check();
+    window.addEventListener("hashchange", check);
+    return () => window.removeEventListener("hashchange", check);
   }, []);
 
   function onPick(e: React.MouseEvent<HTMLDivElement>) {
