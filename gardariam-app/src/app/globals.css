@@ -1207,3 +1207,33 @@ body {
     display: block;
   }
 }
+
+/* Sala principal: escena móvil vertical + zonas parpadeantes */
+.room-scene-movil {
+  display: none;
+  aspect-ratio: 720 / 1264;
+  width: min(100vw, calc(100vh * 720 / 1264));
+  height: min(100vh, calc(100vw * 1264 / 720));
+}
+.room-obj-movil .room-obj-glow {
+  opacity: 0.2;
+  transform: scale(0.92);
+  animation: room-pulse 1.9s ease-in-out infinite;
+}
+@keyframes room-pulse {
+  0%, 100% { opacity: 0.16; transform: scale(0.9); }
+  50% { opacity: 0.62; transform: scale(1.02); }
+}
+.room-obj-movil:active .room-obj-glow {
+  animation: none;
+  opacity: 1;
+  transform: scale(1.04);
+}
+.room-obj-movil .room-obj-label {
+  opacity: 0.9;
+  transform: translateX(-50%);
+}
+@media (orientation: portrait) {
+  .room-scene-desktop { display: none; }
+  .room-scene-movil { display: block; }
+}
