@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 export type RoomTarget = "mapa" | "banderas" | "cronologia" | "estadisticas" | "hub";
 
 interface RoomObject {
@@ -35,10 +37,35 @@ interface ConquestRoomProps {
 }
 
 export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
+  const [pick, setPick] = useState(false);
+  const [pts, setPts] = useState<{ x: number; y: number }[]>([]);
+
+  useEffect(() => {
+    setPick(typeof window !== "undefined" && window.location.hash === "#zonas");
+  }, []);
+
+  function onPick(e: React.MouseEvent<HTMLDivElement>) {
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = +(((e.clientX - r.left) / r.width) * 100).toFixed(1);
+    const y = +(((e.clientY - r.top) / r.height) * 100).toFixed(1);
+    setPts((p) => (p.length >= 2 ? [{ x, y }] : [...p, { x, y }]));
+  }
+
+  const bbox =
+    pts.length === 2
+      ? {
+          left: Math.min(pts[0].x, pts[1].x),
+          top: Math.min(pts[0].y, pts[1].y),
+          width: +Math.abs(pts[0].x - pts[1].x).toFixed(1),
+          height: +Math.abs(pts[0].y - pts[1].y).toFixed(1),
+        }
+      : null;
+
   return (
     <div className="room-section">
       {/* Relleno difuminado detrás */}
       <div className="room-bg" style={{ backgroundImage: "url(/room/room-poster.jpg)" }} />
+      <div className="room-bg-movil" />
       <div className="room-tint" />
 
       {/* Escena escritorio (horizontal) */}
@@ -107,7 +134,29 @@ export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
             <span className="room-obj-label">{o.label}</span>
           </button>
         ))}
+
+        {pick && (
+          <div className="room-pick" onClick={onPick}>
+            {pts.map((p, i) => (
+              <span
+                key={i}
+                className="room-pick-dot"
+                style={{ left: `${p.x}%`, top: `${p.y}%` }}
+              />
+            ))}
+          </div>
+        )}
       </div>
+
+      {pick && (
+        <div className="room-pick-panel">
+          {pts.length < 2
+            ? `Toca esquina sup-izq y luego inf-der de la zona (${pts.length}/2)`
+            : bbox &&
+              `left: ${bbox.left}, top: ${bbox.top}, width: ${bbox.width}, height: ${bbox.height}`}
+          {pts.length === 2 && "  ·  toca de nuevo para otra zona"}
+        </div>
+      )}
     </div>
   );
 }

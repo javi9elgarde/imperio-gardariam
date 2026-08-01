@@ -1229,11 +1229,54 @@ body {
   opacity: 1;
   transform: scale(1.04);
 }
+/* En móvil sin carteles: solo el parpadeo indica que es clicable */
 .room-obj-movil .room-obj-label {
-  opacity: 0.9;
-  transform: translateX(-50%);
+  display: none;
+}
+/* Fondo difuminado cálido para rellenar arriba/abajo (móvil) */
+.room-bg-movil {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: url(/room/room-poster-mobile.jpg) center / cover no-repeat;
+  filter: blur(34px) brightness(0.62) saturate(1.15);
+  transform: scale(1.25);
+}
+/* Selector de coordenadas (#zonas) */
+.room-pick {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  cursor: crosshair;
+}
+.room-pick-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: #f0c542;
+  box-shadow: 0 0 0 2px #000;
+}
+.room-pick-panel {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 60;
+  font-family: monospace;
+  font-size: 12px;
+  color: #f0c542;
+  background: rgba(7, 11, 23, 0.92);
+  border: 1px solid rgba(200, 144, 40, 0.5);
+  border-radius: 8px;
+  padding: 8px 10px;
+  line-height: 1.5;
 }
 @media (orientation: portrait) {
   .room-scene-desktop { display: none; }
   .room-scene-movil { display: block; }
+  .room-bg { display: none; }
+  .room-bg-movil { display: block; }
+  .admin-corner { display: none; }
 }
