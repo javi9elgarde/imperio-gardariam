@@ -16,9 +16,28 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://viajes.gardariam.com"),
   title: "Imperio Gardariam — Nuestro fuego, nuestro amor",
-  description:
-    "El diario de conquistas de Javi y Mariam. Cada país, un territorio del Imperio.",
+  description: "El diario de conquistas de Javi y Mariam. Cada país, un territorio del Imperio.",
+  openGraph: {
+    type: "website",
+    locale: "es_ES",
+    url: "https://viajes.gardariam.com",
+    siteName: "Gardariam",
+    title: "Imperio Gardariam — Nuestro fuego, nuestro amor",
+    description: "El diario de conquistas de Javi y Mariam. Cada país, un territorio del Imperio.",
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "Gardariam" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Imperio Gardariam — Nuestro fuego, nuestro amor",
+    description: "El diario de conquistas de Javi y Mariam. Cada país, un territorio del Imperio.",
+    images: ["/og.jpg"],
+  },
+};
+
+export const viewport = {
+  themeColor: "#070b17",
 };
 
 export default function RootLayout({
