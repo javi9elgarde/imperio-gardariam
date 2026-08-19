@@ -8,7 +8,7 @@ import {
   type User,
 } from "firebase/auth";
 import { createContext, useContext, useEffect, useState } from "react";
-import { ADMIN_EMAIL, auth } from "./firebase";
+import { ADMIN_EMAILS, auth } from "./firebase";
 
 interface AuthState {
   user: User | null;
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signOut(auth);
   }
 
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email);
 
   return (
     <AuthContext.Provider value={{ user, isAdmin, loading, signIn, signOutUser }}>
