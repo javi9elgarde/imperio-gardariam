@@ -36,6 +36,12 @@ export default function VisitsSection({
 
   const showForm = adding || editingIdx !== null;
 
+  /* Se muestran de la más reciente a la más antigua, pero se conserva el índice
+     original: editar, borrar y el id de respaldo dependen de la posición real. */
+  const ordenadas = visits
+    .map((v, i) => ({ v, i }))
+    .sort((a, b) => (b.v.dateFrom || "").localeCompare(a.v.dateFrom || ""));
+
   function startAdd() {
     setDraft(EMPTY);
     setAdding(true);
@@ -153,7 +159,7 @@ export default function VisitsSection({
           </p>
         )}
 
-        {visits.map((v, i) =>
+        {ordenadas.map(({ v, i }) =>
           editingIdx === i ? null : (
             <div key={i} className="exp-card">
               <button
