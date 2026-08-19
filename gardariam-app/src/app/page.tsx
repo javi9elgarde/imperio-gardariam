@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import BackToRoom from "@/components/BackToRoom";
 import ConquestRoom, { type RoomTarget } from "@/components/ConquestRoom";
+import LoadingScreen from "@/components/LoadingScreen";
 import CountryPanel from "@/components/CountryPanel";
 import MapZone from "@/components/region/MapZone";
 import FlagRoom from "@/components/sections/FlagRoom";
@@ -46,6 +47,7 @@ export default function Home() {
 
   return (
     <div className="viajes-app">
+      <LoadingScreen />
       {/* ===== Sala (portada, fija) ===== */}
       <div className={`view-layer ${view === "sala" ? "active" : ""}`}>
         <ConquestRoom onNavigate={navigate} />

@@ -91,7 +91,7 @@ export default function StatsSection() {
           transition={{ duration: 0.6 }}
           className="text-gold-glow font-display mb-14 text-center text-2xl font-bold uppercase tracking-[0.14em] text-imperial-gold-bright sm:text-3xl"
         >
-          ⚔ Estadísticas del Imperio
+          ⚔ Estadísticas del Imperio Gardariam
         </motion.h2>
 
         <div className="mb-12 flex justify-center">
@@ -107,10 +107,6 @@ export default function StatsSection() {
           <StatCard value={stats.totalVisits} label="Expediciones" />
           <StatCard value={stats.totalDays} label="Días de Aventura" />
           <StatCard value={stats.totalRestaurants} label="Restaurantes Probados" />
-          <StatCard
-            value={stats.mostVisitedCountry ? stats.mostVisitedCountry.name : "—"}
-            label="País Más Visitado"
-          />
           <StatCard value={stats.busiestYear ? stats.busiestYear.year : "—"} label="Año Con Más Viajes" />
         </div>
       </div>

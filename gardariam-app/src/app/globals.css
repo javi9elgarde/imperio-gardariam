@@ -597,10 +597,10 @@ body {
     opacity 0.3s var(--ease-imperial),
     transform 0.3s var(--ease-imperial);
 }
-.room-obj:hover .room-obj-glow,
-.room-obj:focus-visible .room-obj-glow {
-  opacity: 1;
-  transform: scale(1);
+/* El recuadro de luz marcaba la caja rectangular de la zona y quedaba raro
+   sobre objetos que no son rectángulos. Ahora solo manda el círculo. */
+.room-obj-glow {
+  display: none;
 }
 /* Etiqueta emergente encima del objeto */
 .room-obj-label {
@@ -1215,20 +1215,6 @@ body {
   width: min(100vw, calc(100vh * 720 / 1264));
   height: min(100vh, calc(100vw * 1264 / 720));
 }
-.room-obj-movil .room-obj-glow {
-  opacity: 0.2;
-  transform: scale(0.92);
-  animation: room-pulse 1.9s ease-in-out infinite;
-}
-@keyframes room-pulse {
-  0%, 100% { opacity: 0.16; transform: scale(0.9); }
-  50% { opacity: 0.62; transform: scale(1.02); }
-}
-.room-obj-movil:active .room-obj-glow {
-  animation: none;
-  opacity: 1;
-  transform: scale(1.04);
-}
 /* En móvil sin carteles: solo el parpadeo indica que es clicable */
 .room-obj-movil .room-obj-label {
   display: none;
@@ -1287,35 +1273,59 @@ body {
 
 /* Marca discreta en el centro del objeto: un punto de luz que late.
    En el escritorio basta para saber que hay algo; el cartel sale al pasar. */
+/* Chapa dorada: un círculo con borde oscuro para que se recorte sobre
+   cualquier fondo, y un anillo que sale de él como una gota en el agua. */
 .room-obj-marca {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 12px;
-  height: 12px;
-  margin: -6px 0 0 -6px;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
   border-radius: 50%;
   pointer-events: none;
-  background: radial-gradient(circle, #fff6d4 0%, #f0c542 45%, rgba(240, 197, 66, 0) 72%);
-  box-shadow: 0 0 10px rgba(240, 197, 66, 0.85);
-  animation: room-marca 2.6s ease-in-out infinite;
+  background:
+    radial-gradient(circle at 38% 32%, #fffbe8 0%, #ffd764 38%, #e0a51f 72%, #a3700f 100%);
+  border: 2px solid rgba(38, 24, 8, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(255, 236, 170, 0.55),
+    0 0 16px rgba(240, 197, 66, 0.9),
+    0 2px 6px rgba(0, 0, 0, 0.55);
+  animation: room-marca 2.4s ease-in-out infinite;
 }
-/* anillo que se expande, como una gota en el agua */
+/* punto oscuro central, para que se lea como un botón */
+.room-obj-marca::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: rgba(58, 36, 10, 0.55);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+/* anillo que se expande */
 .room-obj-marca::after {
   content: "";
   position: absolute;
-  inset: -4px;
+  inset: -3px;
   border-radius: 50%;
-  border: 1px solid rgba(240, 197, 66, 0.7);
-  animation: room-onda 2.6s ease-out infinite;
+  border: 2px solid rgba(255, 216, 110, 0.85);
+  animation: room-onda 2.4s ease-out infinite;
 }
 @keyframes room-marca {
-  0%, 100% { opacity: 0.5; transform: scale(0.85); }
-  50% { opacity: 1; transform: scale(1.1); }
+  0%, 100% { transform: scale(0.94); }
+  50% { transform: scale(1.08); }
 }
 @keyframes room-onda {
-  0% { opacity: 0.65; transform: scale(0.7); }
-  70%, 100% { opacity: 0; transform: scale(2.6); }
+  0% { opacity: 0.8; transform: scale(0.85); }
+  70%, 100% { opacity: 0; transform: scale(2.4); }
+}
+@media (max-width: 640px) {
+  .room-obj-marca {
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+  }
+  .room-obj-marca::before { inset: 8px; }
 }
 /* al señalar el objeto, la marca sobra */
 .room-obj:hover .room-obj-marca,
@@ -1324,6 +1334,10 @@ body {
   opacity: 0;
   animation: none;
   transition: opacity 0.2s ease;
+}
+.room-obj:hover .room-obj-marca::after,
+.room-obj-movil.is-armado .room-obj-marca::after {
+  animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .room-obj-marca,
@@ -1339,18 +1353,7 @@ body {
 .room-obj-movil.is-armado {
   z-index: 6;
 }
-.room-obj-movil.is-armado .room-obj-glow {
-  animation: none;
-  opacity: 1;
-  transform: scale(1.06);
-  background: radial-gradient(
-    ellipse at center,
-    rgba(240, 197, 66, 0.5),
-    rgba(240, 197, 66, 0.15) 45%,
-    transparent 72%
-  );
-  box-shadow: inset 0 0 46px rgba(240, 197, 66, 0.4);
-}
+
 /* Cinta de pergamino: pequeña, pegada al objeto, no tapa la escena */
 .room-obj-cinta {
   position: absolute;
@@ -1408,6 +1411,38 @@ body {
   from { opacity: 0; transform: translateX(-50%) translateY(6px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+/* Zonas pegadas a un borde: la cinta se ancla a ese lado en vez de centrarse,
+   y la punta se queda cerca del objeto. */
+.room-obj-movil.cinta-izq .room-obj-cinta {
+  left: 0;
+  transform: none;
+  max-width: 72vw;
+}
+.room-obj-movil.cinta-izq .room-obj-cinta::after {
+  left: 22px;
+  margin-left: 0;
+}
+.room-obj-movil.cinta-der .room-obj-cinta {
+  left: auto;
+  right: 0;
+  transform: none;
+  max-width: 72vw;
+}
+.room-obj-movil.cinta-der .room-obj-cinta::after {
+  left: auto;
+  right: 22px;
+  margin-left: 0;
+}
+/* la animación de entrada no debe volver a centrar la cinta */
+.room-obj-movil.cinta-izq .room-obj-cinta,
+.room-obj-movil.cinta-der .room-obj-cinta {
+  animation-name: room-cinta-lado;
+}
+@keyframes room-cinta-lado {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Las zonas de la mitad de arriba llevan la cinta debajo, si no se sale */
 .room-obj-movil.cinta-abajo .room-obj-cinta {
   bottom: auto;
@@ -1605,4 +1640,53 @@ body {
 /* con la barra abajo, el cartel flotante sobra (y se salía de pantalla) */
 @media (hover: none) {
   .emap-tip { display: none; }
+}
+
+/* ===== Pantalla de carga (igual que en Cocina) ===== */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
+  background: radial-gradient(circle at 50% 45%, #17223d 0%, #070b17 70%);
+  opacity: 1;
+  transition: opacity 0.6s ease;
+}
+.loading-screen.is-out {
+  opacity: 0;
+  pointer-events: none;
+}
+.loading-logo {
+  width: min(260px, 55vw);
+  height: auto;
+  filter: drop-shadow(0 0 40px rgba(200, 144, 40, 0.45));
+  animation: loading-pop 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes loading-pop {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.loading-bar {
+  width: min(220px, 50vw);
+  height: 8px;
+  border-radius: 999px;
+  border: 2px solid #7a5228;
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.loading-bar span {
+  display: block;
+  height: 100%;
+  width: 40%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c8901f, #ffd977);
+  animation: loading-slide 1.1s ease-in-out infinite;
+}
+@keyframes loading-slide {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(300%); }
 }

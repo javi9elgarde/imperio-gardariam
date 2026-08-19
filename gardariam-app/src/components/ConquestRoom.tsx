@@ -61,6 +61,14 @@ export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
     setPts((p) => (p.length >= 2 ? [{ x, y }] : [...p, { x, y }]));
   }
 
+  /** Zonas pegadas a un borde: la cinta se ancla a ese lado, si no se sale */
+  function ladoDeLaCinta(o: RoomObject): string {
+    const centro = o.left + o.width / 2;
+    if (centro < 30) return "cinta-izq";
+    if (centro > 70) return "cinta-der";
+    return "";
+  }
+
   function tocarMovil(o: RoomObject) {
     if (armado !== o.id) {
       setArmado(o.id);
@@ -152,10 +160,10 @@ export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
           <button
             key={o.id}
             type="button"
-            /* las zonas de arriba llevan la cinta debajo, si no se sale de la pantalla */
+            /* la cinta se coloca sola para no salirse por ningún borde */
             className={`room-obj room-obj-movil ${armado === o.id ? "is-armado" : ""} ${
               o.top < 30 ? "cinta-abajo" : ""
-            }`}
+            } ${ladoDeLaCinta(o)}`}
             aria-label={armado === o.id ? `Entrar en ${o.label}` : o.label}
             onClick={() => tocarMovil(o)}
             style={{
