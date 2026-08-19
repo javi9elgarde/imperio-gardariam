@@ -1,4 +1,5 @@
 import { getConquestMap, getCountryDataMap } from "./storage";
+import { idDeVisita } from "./types";
 import type { CountryInfo } from "./worldData";
 
 function resolveName(
@@ -107,6 +108,10 @@ export interface TimelineEntry {
   dateFrom: string;
   dateTo: string;
   note: string;
+  /** para poder abrir la ficha de esa expedición desde la cronología */
+  visitId: string;
+  photo: string;
+  hasVideo: boolean;
 }
 
 export function computeTimeline(
@@ -117,7 +122,7 @@ export function computeTimeline(
   const entries: TimelineEntry[] = [];
 
   Object.entries(dataMap).forEach(([iso, data]) => {
-    data.visits.forEach((v) => {
+    data.visits.forEach((v, i) => {
       if (!v.dateFrom) return;
       entries.push({
         iso,
@@ -126,10 +131,14 @@ export function computeTimeline(
         dateFrom: v.dateFrom,
         dateTo: v.dateTo,
         note: v.note,
+        visitId: idDeVisita(v, i),
+        photo: v.coverPhoto || v.photos[0] || "",
+        hasVideo: Boolean(v.videoUrl),
       });
     });
   });
 
-  entries.sort((a, b) => a.dateFrom.localeCompare(b.dateFrom));
+  // de lo más reciente a lo más antiguo: al bajar se retrocede en el tiempo
+  entries.sort((a, b) => b.dateFrom.localeCompare(a.dateFrom));
   return entries;
 }

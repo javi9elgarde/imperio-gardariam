@@ -1690,3 +1690,526 @@ body {
   0% { transform: translateX(-110%); }
   100% { transform: translateX(300%); }
 }
+
+/* ===================================================================
+   Subida de fotos (solo admin)
+   =================================================================== */
+.uploader {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.uploader-btn {
+  font-family: var(--font-display), serif;
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #f0dcae;
+  background: rgba(20, 14, 6, 0.78);
+  border: 1px solid rgba(200, 144, 40, 0.55);
+  border-radius: 999px;
+  padding: 0.42em 0.85em;
+  cursor: pointer;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  transition: background 0.18s ease;
+}
+.uploader-btn:hover:not(:disabled) {
+  background: rgba(40, 28, 10, 0.92);
+}
+.uploader-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.uploader-error {
+  font-size: 0.6rem;
+  color: #e39a9a;
+}
+.hero-acciones {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 3;
+  display: flex;
+  gap: 0.35rem;
+}
+.hero-url-btn {
+  font-family: var(--font-display), serif;
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #f0dcae;
+  background: rgba(20, 14, 6, 0.78);
+  border: 1px solid rgba(200, 144, 40, 0.4);
+  border-radius: 999px;
+  padding: 0.42em 0.75em;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+/* ===================================================================
+   Ficha del pais: resumen y separacion de las expediciones
+   =================================================================== */
+.pais-resumen {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding: 0.7rem 0.5rem;
+  border-radius: 10px;
+  background: rgba(120, 86, 40, 0.12);
+  border: 1px solid rgba(140, 100, 45, 0.35);
+  text-align: center;
+}
+.pais-resumen b {
+  display: block;
+  font-family: var(--font-display), serif;
+  font-size: 1.15rem;
+  line-height: 1.1;
+  color: #7a2a1c;
+}
+.pais-resumen span {
+  font-size: 0.54rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #6f5c3c;
+}
+.pais-aviso {
+  margin-bottom: 1rem;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  font-style: italic;
+  color: #6f5c3c;
+}
+
+/* Tarjeta de expedicion dentro de la ficha del pais */
+.exp-card {
+  border-radius: 10px;
+  border: 1px solid rgba(140, 100, 45, 0.4);
+  background: rgba(255, 250, 235, 0.45);
+  padding: 0.85rem;
+}
+.exp-card-abrir {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.exp-card-abrir:disabled {
+  cursor: default;
+}
+.exp-card-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-family: var(--font-display), serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #3a2c1a;
+}
+.exp-card-titulo i {
+  font-style: normal;
+  font-size: 1.2rem;
+  color: #9c6a1e;
+  transition: transform 0.18s ease;
+}
+.exp-card-abrir:hover .exp-card-titulo i {
+  transform: translateX(3px);
+}
+.exp-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+.exp-card-chips span {
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  color: #6f5c3c;
+  background: rgba(140, 100, 45, 0.14);
+  border: 1px solid rgba(140, 100, 45, 0.3);
+  border-radius: 999px;
+  padding: 0.24em 0.6em;
+}
+
+/* ===================================================================
+   Ficha de expedicion
+   =================================================================== */
+.exp-hero {
+  position: relative;
+  flex-shrink: 0;
+  aspect-ratio: 16 / 8;
+  max-height: 34vh;
+  overflow: hidden;
+  background: #241a0e;
+}
+.exp-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.exp-hero-vacio {
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(200, 144, 40, 0.25), transparent 60%),
+    linear-gradient(150deg, #3a2a12, #1b1408);
+}
+.exp-hero-velo {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(18, 12, 4, 0.94) 8%, rgba(18, 12, 4, 0.25) 55%, transparent);
+}
+.exp-hero-subir {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 3;
+}
+.exp-volver {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 3;
+  font-family: var(--font-display), serif;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #f0dcae;
+  background: rgba(20, 14, 6, 0.78);
+  border: 1px solid rgba(200, 144, 40, 0.5);
+  border-radius: 999px;
+  padding: 0.45em 0.9em;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+/* si el admin ve el boton de subir, el de volver baja para no solaparse */
+.exp-hero-subir ~ .exp-volver {
+  top: 2.7rem;
+}
+.exp-hero-txt {
+  position: absolute;
+  left: 1rem;
+  right: 3.5rem;
+  bottom: 0.85rem;
+  z-index: 2;
+}
+.exp-migas {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-display), serif;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #e0c07a;
+}
+.exp-migas img {
+  width: 20px;
+  height: auto;
+  border-radius: 2px;
+}
+.exp-hero-txt h2 {
+  margin: 0.2rem 0 0.15rem;
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.15rem, 4vw, 1.6rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fdf3d8;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+}
+.exp-fechas {
+  font-size: 0.72rem;
+  color: #cdb488;
+}
+.exp-fechas b {
+  color: #f0c542;
+}
+.exp-nota {
+  margin-bottom: 1.1rem;
+  padding: 0.75rem 0.9rem;
+  border-left: 3px solid #9c6a1e;
+  border-radius: 0 8px 8px 0;
+  background: rgba(140, 100, 45, 0.12);
+  font-size: 0.82rem;
+  font-style: italic;
+  line-height: 1.55;
+  color: #4a3a22;
+}
+.exp-bloque {
+  margin-bottom: 1.25rem;
+}
+.exp-bloque-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(140, 100, 45, 0.35);
+  font-family: var(--font-display), serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #6f5c3c;
+}
+.exp-vacio {
+  padding: 0.9rem 0;
+  text-align: center;
+  font-size: 0.74rem;
+  font-style: italic;
+  color: #8a7350;
+}
+.exp-galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.35rem;
+}
+.exp-foto {
+  position: relative;
+  display: block;
+}
+.exp-foto img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: zoom-in;
+  transition: opacity 0.18s ease;
+}
+.exp-foto img:hover {
+  opacity: 0.85;
+}
+.exp-foto-x {
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  font-size: 0.6rem;
+  line-height: 1;
+  color: #fdf3d8;
+  background: rgba(120, 24, 24, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* ===================================================================
+   Cronologia
+   =================================================================== */
+.crono-section {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  background: var(--color-imperial-charcoal);
+  padding: clamp(2.5rem, 7vw, 5rem) 1rem 5rem;
+  overflow-y: auto;
+}
+.crono-inner {
+  margin: 0 auto;
+  max-width: 720px;
+}
+.crono-titulo {
+  font-family: var(--font-display), serif;
+  font-size: clamp(1.35rem, 4.5vw, 1.9rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  text-align: center;
+  color: var(--color-imperial-gold-bright);
+  text-shadow: 0 0 18px rgba(200, 144, 40, 0.45);
+}
+.crono-sub {
+  margin: 0.4rem 0 2.2rem;
+  text-align: center;
+  font-size: 0.72rem;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  color: #9c8b6e;
+}
+.crono-vacio {
+  text-align: center;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #9c8b6e;
+}
+.crono-linea {
+  position: relative;
+  padding-left: 2.2rem;
+}
+.crono-linea::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    rgba(200, 144, 40, 0.75),
+    rgba(200, 144, 40, 0.25) 60%,
+    transparent
+  );
+}
+.crono-anio {
+  margin-bottom: 1.6rem;
+}
+.crono-anio-cab {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+}
+.crono-anio-cab::before {
+  content: "";
+  position: absolute;
+  left: -2.2rem;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fffbe8, #e0a51f 70%, #a3700f);
+  border: 2px solid rgba(38, 24, 8, 0.85);
+  box-shadow: 0 0 12px rgba(240, 197, 66, 0.7);
+}
+.crono-anio-cab span {
+  font-family: var(--font-display), serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--color-imperial-gold-bright);
+}
+.crono-anio-cab i {
+  font-style: normal;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #9c8b6e;
+}
+.crono-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  margin-bottom: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid rgba(200, 144, 40, 0.28);
+  background: linear-gradient(150deg, rgba(30, 38, 58, 0.85), rgba(16, 22, 38, 0.85));
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.crono-card:hover {
+  border-color: rgba(240, 197, 66, 0.75);
+  transform: translateX(4px);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5);
+}
+.crono-punto {
+  position: absolute;
+  left: -2.2rem;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--color-imperial-charcoal);
+  border: 2px solid rgba(200, 144, 40, 0.8);
+}
+.crono-foto {
+  flex: 0 0 auto;
+  width: 62px;
+  height: 62px;
+  border-radius: 9px;
+  object-fit: cover;
+  border: 1px solid rgba(200, 144, 40, 0.35);
+}
+.crono-foto-vacia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: rgba(200, 144, 40, 0.5);
+  background: rgba(200, 144, 40, 0.08);
+}
+.crono-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+.crono-pais {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-display), serif;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #d8ab4a;
+}
+.crono-pais img {
+  width: 16px;
+  height: auto;
+  border-radius: 2px;
+}
+.crono-nombre {
+  font-family: var(--font-display), serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #efe4c6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.crono-fechas {
+  font-size: 0.66rem;
+  color: #9c8b6e;
+}
+.crono-nota {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: #c3b393;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.crono-ir {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 1.3rem;
+  color: rgba(200, 144, 40, 0.8);
+}
+.crono-ir i {
+  font-size: 0.8rem;
+  font-style: normal;
+}
+
+@media (max-width: 520px) {
+  .crono-linea { padding-left: 1.7rem; }
+  .crono-linea::before { left: 7px; }
+  .crono-anio-cab::before { left: -1.7rem; width: 16px; height: 16px; margin-top: -8px; }
+  .crono-punto { left: -1.7rem; }
+  .crono-foto { width: 52px; height: 52px; }
+  .crono-card { gap: 0.6rem; padding: 0.6rem; }
+  .pais-resumen { grid-template-columns: repeat(2, 1fr); }
+}

@@ -9,6 +9,7 @@ import RestaurantsSection from "@/components/panel/RestaurantsSection";
 import VideoSection from "@/components/panel/VideoSection";
 import VisitsSection from "@/components/panel/VisitsSection";
 import { useAuth } from "@/lib/auth";
+import { daysBetween } from "@/lib/format";
 import { playBack } from "@/lib/sound";
 import { loadProvinceNames } from "@/lib/provinces";
 import {
@@ -27,6 +28,8 @@ interface CountryPanelProps {
   onSetStatus: (status: ConquestStatus) => void;
   onConquistar: () => void;
   onDataChange?: () => void;
+  /** abre la ficha propia de una expedición */
+  onOpenExpedition?: (visitId: string) => void;
 }
 
 const BUTTONS: { status: ConquestStatus; label: string }[] = [
@@ -42,6 +45,7 @@ export default function CountryPanel({
   onSetStatus,
   onConquistar,
   onDataChange,
+  onOpenExpedition,
 }: CountryPanelProps) {
   const { isAdmin } = useAuth();
   const [status, setStatus] = useState<ConquestStatus>(() => getStatus(iso));
@@ -88,6 +92,11 @@ export default function CountryPanel({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [iso, provinceNames]);
+
+  const diasTotales = data.visits.reduce(
+    (t, v) => t + (v.dateFrom && v.dateTo ? Math.max(0, daysBetween(v.dateFrom, v.dateTo)) : 0),
+    0,
+  );
 
   function persist(patch: Partial<CountryData>) {
     setData((prev) => ({ ...prev, ...patch }));
@@ -172,6 +181,31 @@ export default function CountryPanel({
         )}
 
         <div className="country-scroll">
+          {/* Resumen: de un vistazo, qué guarda este país */}
+          <div className="pais-resumen">
+            <div>
+              <b>{data.visits.length}</b>
+              <span>{data.visits.length === 1 ? "Expedición" : "Expediciones"}</span>
+            </div>
+            <div>
+              <b>{diasTotales}</b>
+              <span>{diasTotales === 1 ? "Día" : "Días"}</span>
+            </div>
+            <div>
+              <b>{data.restaurants.length}</b>
+              <span>{data.restaurants.length === 1 ? "Restaurante" : "Restaurantes"}</span>
+            </div>
+            <div>
+              <b>{data.highlights.length}</b>
+              <span>Imprescindibles</span>
+            </div>
+          </div>
+
+          <p className="pais-aviso">
+            Esto es la ficha general del país. Cada expedición tiene la suya, con su vídeo,
+            sus restaurantes y sus sitios.
+          </p>
+
           <VideoSection
             videoUrl={data.videoUrl}
             editable={isAdmin}
@@ -182,6 +216,7 @@ export default function CountryPanel({
             editable={isAdmin}
             onChange={(visits: Visit[]) => persist({ visits })}
             onPhotoClick={setLightboxSrc}
+            onOpen={onOpenExpedition}
             provinceVisits={provinceVisits}
           />
           <RestaurantsSection

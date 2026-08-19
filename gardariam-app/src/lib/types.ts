@@ -11,11 +11,43 @@ export interface PaintStroke {
 }
 
 export interface Visit {
+  /** identificador propio: permite enlazar una expedición desde la cronología */
+  id?: string;
   region: string;
   dateFrom: string;
   dateTo: string;
   note: string;
   photos: string[];
+  /* --- Lo propio de ESTA expedición (independiente del país) --- */
+  coverPhoto?: string;
+  videoUrl?: string;
+  restaurants?: Restaurant[];
+  highlights?: string[];
+}
+
+/** Genera un id estable para una expedición nueva */
+export function nuevoVisitId(): string {
+  return `v${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/**
+ * Identificador con el que se abre una expedición. Las guardadas antes de que
+ * existiera `id` se referencian por su posición, hasta que el admin las edite.
+ */
+export function idDeVisita(v: Visit, i: number): string {
+  return v.id ?? `i${i}`;
+}
+
+/** Busca una expedición por el id que devuelve `idDeVisita` */
+export function buscarVisita(visits: Visit[], visitId: string): number {
+  const porId = visits.findIndex((v) => v.id === visitId);
+  if (porId >= 0) return porId;
+  const m = visitId.match(/^i(\d+)$/);
+  if (m) {
+    const i = Number(m[1]);
+    if (i >= 0 && i < visits.length) return i;
+  }
+  return -1;
 }
 
 export interface Restaurant {

@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { daysBetween, formatDate } from "@/lib/format";
-import type { Visit } from "@/lib/types";
+import { idDeVisita, nuevoVisitId, type Visit } from "@/lib/types";
 
 interface VisitsSectionProps {
   visits: Visit[];
   editable: boolean;
   onChange: (visits: Visit[]) => void;
   onPhotoClick: (src: string) => void;
+  /** abre la ficha propia de una expedición */
+  onOpen?: (visitId: string) => void;
   /** Read-only visits owned by sub-territories (e.g. Spain's provinces), shown
    * for context but edited only from that province's own panel. */
   provinceVisits?: { provinceName: string; visit: Visit }[];
@@ -25,6 +27,7 @@ export default function VisitsSection({
   editable,
   onChange,
   onPhotoClick,
+  onOpen,
   provinceVisits = [],
 }: VisitsSectionProps) {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
@@ -49,8 +52,10 @@ export default function VisitsSection({
   }
   function save() {
     const next = [...visits];
-    if (editingIdx !== null) next[editingIdx] = draft;
-    else next.unshift(draft);
+    // toda expedición necesita id propio para poder abrir su ficha
+    const conId: Visit = { ...draft, id: draft.id ?? nuevoVisitId() };
+    if (editingIdx !== null) next[editingIdx] = conId;
+    else next.unshift(conId);
     onChange(next);
     cancel();
   }
@@ -150,10 +155,18 @@ export default function VisitsSection({
 
         {visits.map((v, i) =>
           editingIdx === i ? null : (
-            <div key={i} className="rounded-lg border border-white/10 bg-imperial-charcoal-2 p-3.5">
-              <div className="font-display text-sm font-semibold text-parchment">
-                {v.region || "Expedición"}
-              </div>
+            <div key={i} className="exp-card">
+              <button
+                type="button"
+                className="exp-card-abrir"
+                onClick={() => onOpen?.(idDeVisita(v, i))}
+                disabled={!onOpen}
+              >
+                <span className="exp-card-titulo">
+                  {v.region || "Expedición"}
+                  {onOpen && <i aria-hidden>›</i>}
+                </span>
+              </button>
               <div className="mt-0.5 text-[0.68rem] text-parchment-faint">
                 {v.dateFrom
                   ? `${formatDate(v.dateFrom)}${
@@ -167,6 +180,17 @@ export default function VisitsSection({
                 <p className="mt-1.5 text-[0.76rem] italic leading-relaxed text-parchment-dim">
                   {v.note}
                 </p>
+              )}
+              {(v.videoUrl || (v.restaurants?.length ?? 0) > 0 || (v.highlights?.length ?? 0) > 0) && (
+                <div className="exp-card-chips">
+                  {v.videoUrl && <span>🎬 vídeo</span>}
+                  {(v.restaurants?.length ?? 0) > 0 && (
+                    <span>🍽 {v.restaurants!.length} restaurantes</span>
+                  )}
+                  {(v.highlights?.length ?? 0) > 0 && (
+                    <span>📍 {v.highlights!.length} sitios</span>
+                  )}
+                </div>
               )}
               {v.photos.length > 0 && (
                 <div className="mt-2 grid grid-cols-3 gap-1">

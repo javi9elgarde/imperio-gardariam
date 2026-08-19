@@ -6,6 +6,7 @@ import BackToRoom from "@/components/BackToRoom";
 import ConquestRoom, { type RoomTarget } from "@/components/ConquestRoom";
 import LoadingScreen from "@/components/LoadingScreen";
 import CountryPanel from "@/components/CountryPanel";
+import ExpeditionPanel from "@/components/ExpeditionPanel";
 import MapZone from "@/components/region/MapZone";
 import FlagRoom from "@/components/sections/FlagRoom";
 import StatsSection from "@/components/sections/StatsSection";
@@ -20,6 +21,14 @@ export default function Home() {
   const { isAdmin, user, loading, signIn, signOutUser } = useAuth();
   const [view, setView] = useState<View>("sala");
   const [selected, setSelected] = useState<{ iso: string; name: string } | null>(null);
+  /* Expedición abierta. `desdePais` recuerda si se llegó desde la ficha del
+     país, para poder volver a ella al cerrar. */
+  const [expedicion, setExpedicion] = useState<{
+    iso: string;
+    name: string;
+    visitId: string;
+    desdePais: boolean;
+  } | null>(null);
   const [worldVersion, setWorldVersion] = useState(0);
 
   useEffect(() => onStorageChange(() => bumpWorld()), []);
@@ -42,7 +51,21 @@ export default function Home() {
 
   function backToRoom() {
     setSelected(null);
+    setExpedicion(null);
     setView("sala");
+  }
+
+  function abrirExpedicion(iso: string, name: string, visitId: string, desdePais = false) {
+    setExpedicion({ iso, name, visitId, desdePais });
+  }
+
+  function cerrarExpedicion() {
+    // si se abrió desde la ficha del país, se vuelve a ella; si no, se cierra todo
+    if (expedicion?.desdePais) setExpedicion(null);
+    else {
+      setExpedicion(null);
+      setSelected(null);
+    }
   }
 
   return (
@@ -75,7 +98,9 @@ export default function Home() {
 
       {/* ===== Zona: Cronología ===== */}
       <div className={`view-layer ${view === "cronologia" ? "active" : ""}`}>
-        <Timeline />
+        <Timeline
+          onOpenExpedition={(iso, name, visitId) => abrirExpedicion(iso, name, visitId)}
+        />
         <BackToRoom onClick={backToRoom} />
       </div>
 
@@ -95,6 +120,24 @@ export default function Home() {
             onDataChange={bumpWorld}
             onSetStatus={(status: ConquestStatus) => setStatus(selected.iso, status)}
             onConquistar={() => {}}
+            onOpenExpedition={(visitId) =>
+              abrirExpedicion(selected.iso, selected.name, visitId, true)
+            }
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {expedicion && (
+          <ExpeditionPanel
+            key={`${expedicion.iso}-${expedicion.visitId}`}
+            iso={expedicion.iso}
+            countryName={expedicion.name}
+            visitId={expedicion.visitId}
+            onClose={cerrarExpedicion}
+            onBackToCountry={
+              expedicion.desdePais ? () => setExpedicion(null) : undefined
+            }
           />
         )}
       </AnimatePresence>

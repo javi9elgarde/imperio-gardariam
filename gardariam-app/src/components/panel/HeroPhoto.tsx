@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PhotoUploader from "@/components/panel/PhotoUploader";
 import { flagUrl } from "@/lib/format";
 
 interface HeroPhotoProps {
@@ -26,15 +27,23 @@ export default function HeroPhoto({ iso, name, coverPhoto, editable, onChange }:
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-imperial-charcoal via-imperial-charcoal/10 to-transparent" />
 
       {editable && (
-        <button
-          onClick={() => {
-            setDraft(coverPhoto);
-            setEditing((e) => !e);
-          }}
-          className="font-display absolute left-3 top-3 rounded-full border border-imperial-gold/30 bg-imperial-charcoal/70 px-3 py-1 text-[0.56rem] uppercase tracking-[0.1em] text-imperial-gold-bright backdrop-blur transition-colors hover:bg-imperial-charcoal/90"
-        >
-          ⚜ Foto
-        </button>
+        <div className="hero-acciones">
+          <PhotoUploader
+            carpeta={`paises/${iso}`}
+            etiqueta="Subir portada"
+            onSubida={(urls) => onChange(urls[0])}
+          />
+          <button
+            onClick={() => {
+              setDraft(coverPhoto);
+              setEditing((e) => !e);
+            }}
+            className="hero-url-btn"
+            title="Pegar una dirección de internet en vez de subir un archivo"
+          >
+            🔗 URL
+          </button>
+        </div>
       )}
 
       <div className="absolute bottom-3 left-4 right-16 flex items-center gap-3">
