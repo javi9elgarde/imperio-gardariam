@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { flagUrl } from "@/lib/format";
+import { playEnter, playHover, playPick } from "@/lib/sound";
 
 interface ConqueredCountry {
   iso: string;
@@ -31,9 +33,45 @@ interface EuropeMapProps {
 }
 
 export default function EuropeMap({ onSelectCountry }: EuropeMapProps) {
+  const [tactil, setTactil] = useState(false);
+  /* Sin puntero no se puede "pasar por encima": el primer toque enseña de qué
+     país se trata y el segundo abre su ficha. */
+  const [armado, setArmado] = useState<string | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: none)");
+    const upd = () => setTactil(mq.matches);
+    upd();
+    mq.addEventListener("change", upd);
+    return () => mq.removeEventListener("change", upd);
+  }, []);
+
+  function tocar(c: ConqueredCountry) {
+    if (!tactil) {
+      playEnter();
+      onSelectCountry(c.iso, c.name);
+      return;
+    }
+    if (armado !== c.iso) {
+      setArmado(c.iso);
+      playPick();
+      return;
+    }
+    setArmado(null);
+    playEnter();
+    onSelectCountry(c.iso, c.name);
+  }
+
+  const elegido = CONQUERED.find((c) => c.iso === armado) ?? null;
+
   return (
     <div className="emap-wrap">
       <div className="emap-scene">
+        {/* tocar fuera de un país deshace la selección */}
+        {armado && (
+          <div className="emap-desarmar" onClick={() => setArmado(null)} aria-hidden />
+        )}
+
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="emap-base"
@@ -49,9 +87,13 @@ export default function EuropeMap({ onSelectCountry }: EuropeMapProps) {
             <button
               key={c.iso}
               type="button"
-              className={`emap-country ${tipBelow ? "tip-below" : ""}`}
-              aria-label={c.name}
-              onClick={() => onSelectCountry(c.iso, c.name)}
+              className={`emap-country ${tipBelow ? "tip-below" : ""} ${
+                armado === c.iso ? "is-armado" : ""
+              }`}
+              aria-label={armado === c.iso ? `Abrir ${c.name}` : c.name}
+              onPointerEnter={() => !tactil && playHover()}
+              onFocus={() => !tactil && playHover()}
+              onClick={() => tocar(c)}
               style={{
                 left: `${c.left}%`,
                 top: `${c.top}%`,
@@ -64,12 +106,36 @@ export default function EuropeMap({ onSelectCountry }: EuropeMapProps) {
               <span className="emap-tip">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img className="emap-tip-flag" src={flagUrl(c.iso)} alt="" />
-                {c.name}
+                <span className="emap-tip-txt">
+                  {c.name}
+                  {armado === c.iso && <i>Toca otra vez para abrir</i>}
+                </span>
               </span>
             </button>
           );
         })}
       </div>
+
+      {/* Móvil: barra inferior con el país señalado. Un cartel flotante se
+          sale de la pantalla en los países del borde; así siempre se lee. */}
+      {tactil && elegido && (
+        <div className="emap-barra" role="status">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="emap-barra-flag" src={flagUrl(elegido.iso)} alt="" />
+          <span className="emap-barra-nombre">{elegido.name}</span>
+          <button
+            type="button"
+            className="emap-barra-btn"
+            onClick={() => {
+              setArmado(null);
+              playEnter();
+              onSelectCountry(elegido.iso, elegido.name);
+            }}
+          >
+            Abrir ficha ›
+          </button>
+        </div>
+      )}
     </div>
   );
 }

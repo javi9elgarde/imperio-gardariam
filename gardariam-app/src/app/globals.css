@@ -974,10 +974,10 @@ body {
     radial-gradient(circle at 18% 12%, rgba(190, 160, 110, 0.28), transparent 42%),
     radial-gradient(circle at 85% 88%, rgba(150, 115, 65, 0.22), transparent 46%),
     linear-gradient(160deg, #efe4c6 0%, #e6d6b2 55%, #dcc9a0 100%);
-  border-left: 3px solid #9c6a1e !important;
+  border: 3px solid #9c6a1e;
   box-shadow:
     inset 0 0 70px rgba(120, 90, 50, 0.28),
-    -12px 0 44px rgba(0, 0, 0, 0.55);
+    0 28px 70px rgba(0, 0, 0, 0.65);
   color: #3a2c1a;
 }
 .pnl-close {
@@ -1279,4 +1279,330 @@ body {
   .room-bg { display: none; }
   .room-bg-movil { display: block; }
   .admin-corner { display: none; }
+}
+
+/* ===================================================================
+   Zonas de la sala: que se vea qué se puede tocar sin tapar el fondo
+   =================================================================== */
+
+/* Marca discreta en el centro del objeto: un punto de luz que late.
+   En el escritorio basta para saber que hay algo; el cartel sale al pasar. */
+.room-obj-marca {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, #fff6d4 0%, #f0c542 45%, rgba(240, 197, 66, 0) 72%);
+  box-shadow: 0 0 10px rgba(240, 197, 66, 0.85);
+  animation: room-marca 2.6s ease-in-out infinite;
+}
+/* anillo que se expande, como una gota en el agua */
+.room-obj-marca::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid rgba(240, 197, 66, 0.7);
+  animation: room-onda 2.6s ease-out infinite;
+}
+@keyframes room-marca {
+  0%, 100% { opacity: 0.5; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+@keyframes room-onda {
+  0% { opacity: 0.65; transform: scale(0.7); }
+  70%, 100% { opacity: 0; transform: scale(2.6); }
+}
+/* al señalar el objeto, la marca sobra */
+.room-obj:hover .room-obj-marca,
+.room-obj:focus-visible .room-obj-marca,
+.room-obj-movil.is-armado .room-obj-marca {
+  opacity: 0;
+  animation: none;
+  transition: opacity 0.2s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .room-obj-marca,
+  .room-obj-marca::after { animation: none; }
+}
+
+/* --- Móvil: primer toque señala, segundo entra --- */
+.room-desarmar {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+}
+.room-obj-movil.is-armado {
+  z-index: 6;
+}
+.room-obj-movil.is-armado .room-obj-glow {
+  animation: none;
+  opacity: 1;
+  transform: scale(1.06);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(240, 197, 66, 0.5),
+    rgba(240, 197, 66, 0.15) 45%,
+    transparent 72%
+  );
+  box-shadow: inset 0 0 46px rgba(240, 197, 66, 0.4);
+}
+/* Cinta de pergamino: pequeña, pegada al objeto, no tapa la escena */
+.room-obj-cinta {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15em;
+  width: max-content;
+  max-width: 46vw;
+  pointer-events: none;
+  font-family: var(--font-display), serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  text-align: center;
+  color: #3a2c1a;
+  background: linear-gradient(#f6ecd2, #e2d1a8);
+  border: 1px solid rgba(120, 80, 30, 0.75);
+  border-radius: 8px;
+  padding: 0.4em 0.75em;
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  animation: room-cinta 0.22s var(--ease-imperial) both;
+}
+.room-obj-cinta i {
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.54rem;
+  letter-spacing: 0.05em;
+  text-transform: none;
+  color: #7a5a28;
+}
+/* picuda por abajo, como una etiqueta colgada */
+.room-obj-cinta::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  transform: translateY(-5px) rotate(45deg);
+  background: #e2d1a8;
+  border-right: 1px solid rgba(120, 80, 30, 0.75);
+  border-bottom: 1px solid rgba(120, 80, 30, 0.75);
+}
+@keyframes room-cinta {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+/* Las zonas de la mitad de arriba llevan la cinta debajo, si no se sale */
+.room-obj-movil.cinta-abajo .room-obj-cinta {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+.room-obj-movil.cinta-abajo .room-obj-cinta::after {
+  top: auto;
+  bottom: 100%;
+  transform: translateY(5px) rotate(225deg);
+}
+
+/* ===================================================================
+   Mapa: en el móvil el primer toque enseña el país y el segundo lo abre
+   =================================================================== */
+.emap-desarmar {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.emap-country.is-armado {
+  z-index: 6;
+}
+.emap-country.is-armado .emap-country-img {
+  opacity: 1;
+  filter: brightness(1.22) drop-shadow(0 0 10px rgba(240, 197, 66, 1))
+    drop-shadow(0 0 22px rgba(240, 197, 66, 0.7));
+  transform: scale(1.04);
+}
+.emap-country.is-armado .emap-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.emap-tip-txt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+.emap-tip-txt i {
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.54rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: #7a5a28;
+}
+
+/* En pantallas táctiles los países ya se ven un poco, sin tener que adivinar */
+@media (hover: none) {
+  .emap-country-img {
+    opacity: 0.42;
+    filter: drop-shadow(0 0 5px rgba(240, 197, 66, 0.55));
+    animation: emap-latido 3.4s ease-in-out infinite;
+  }
+  .emap-country.is-armado .emap-country-img {
+    animation: none;
+  }
+  .emap-tip {
+    font-size: 0.8rem;
+    padding: 0.45em 0.85em;
+  }
+  .emap-tip-flag {
+    width: 26px;
+  }
+}
+@keyframes emap-latido {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .emap-country-img { animation: none; }
+}
+
+/* ===================================================================
+   Ficha de país: ventana centrada (antes era un cajón lateral)
+   =================================================================== */
+.country-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.5rem, 3vw, 2rem);
+  background: rgba(7, 11, 23, 0.78);
+  backdrop-filter: blur(3px);
+}
+.country-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(760px, 100%);
+  max-height: min(92vh, 900px);
+  overflow: hidden;
+  border-radius: 14px;
+}
+.country-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+.country-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  overscroll-behavior: contain;
+}
+
+/* La foto de portada manda menos: la ficha tiene más ancho que el cajón */
+.country-card .aspect-video {
+  max-height: 34vh;
+}
+
+@media (min-width: 900px) {
+  /* en pantalla ancha, las secciones en dos columnas para no scrollear tanto */
+  .country-scroll {
+    padding: 1.5rem 1.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .country-overlay { padding: 0; }
+  .country-card {
+    width: 100%;
+    max-height: 100vh;
+    height: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  .country-scroll { padding: 1rem; }
+}
+
+/* Barra inferior del mapa en móvil: el país señalado, siempre legible */
+.emap-barra {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom));
+  background: linear-gradient(#f6ecd2, #e2d1a8);
+  border-top: 2px solid #9c6a1e;
+  box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.55);
+  animation: emap-barra-sube 0.24s var(--ease-imperial) both;
+}
+@keyframes emap-barra-sube {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.emap-barra-flag {
+  width: 40px;
+  height: auto;
+  flex: 0 0 auto;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.emap-barra-nombre {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display), serif;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  color: #3a2c1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.emap-barra-btn {
+  flex: 0 0 auto;
+  /* objetivo cómodo para el dedo */
+  min-height: 46px;
+  font-family: var(--font-display), serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  color: #f6ecd2;
+  background: linear-gradient(#8c2f22, #6d2118);
+  border: 1px solid #4a160f;
+  border-radius: 8px;
+  padding: 0.7em 1.1em;
+  box-shadow: 0 3px 0 #4a160f;
+  cursor: pointer;
+}
+.emap-barra-btn:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+/* con la barra abajo, el cartel flotante sobra (y se salía de pantalla) */
+@media (hover: none) {
+  .emap-tip { display: none; }
 }

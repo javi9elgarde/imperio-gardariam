@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { playEnter, playHover, playPick } from "@/lib/sound";
 
 export type RoomTarget = "mapa" | "banderas" | "cronologia" | "estadisticas" | "hub";
 
@@ -37,6 +38,9 @@ interface ConquestRoomProps {
 }
 
 export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
+  /* En el móvil no hay puntero: el primer toque señala la zona y enseña a dónde
+     lleva, y el segundo entra. Así nadie se mete a ciegas. */
+  const [armado, setArmado] = useState<string | null>(null);
   const [pick, setPick] = useState(false);
   const [pts, setPts] = useState<{ x: number; y: number }[]>([]);
 
@@ -55,6 +59,17 @@ export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
     const x = +(((e.clientX - r.left) / r.width) * 100).toFixed(1);
     const y = +(((e.clientY - r.top) / r.height) * 100).toFixed(1);
     setPts((p) => (p.length >= 2 ? [{ x, y }] : [...p, { x, y }]));
+  }
+
+  function tocarMovil(o: RoomObject) {
+    if (armado !== o.id) {
+      setArmado(o.id);
+      playPick();
+      return;
+    }
+    setArmado(null);
+    playEnter();
+    onNavigate(o.target);
   }
 
   const bbox =
@@ -94,7 +109,12 @@ export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
             type="button"
             className="room-obj"
             aria-label={o.label}
-            onClick={() => onNavigate(o.target)}
+            onPointerEnter={playHover}
+            onFocus={playHover}
+            onClick={() => {
+              playEnter();
+              onNavigate(o.target);
+            }}
             style={{
               left: `${o.left}%`,
               top: `${o.top}%`,
@@ -103,6 +123,7 @@ export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
             }}
           >
             <span className="room-obj-glow" />
+            <span className="room-obj-marca" aria-hidden />
             <span className="room-obj-label">{o.label}</span>
           </button>
         ))}
@@ -122,13 +143,21 @@ export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
           <source src="/room/room-loop-mobile.mp4" type="video/mp4" />
         </video>
 
+        {/* al tocar fuera se deshace la selección */}
+        {armado && (
+          <div className="room-desarmar" onClick={() => setArmado(null)} aria-hidden />
+        )}
+
         {OBJECTS_MOVIL.map((o) => (
           <button
             key={o.id}
             type="button"
-            className="room-obj room-obj-movil"
-            aria-label={o.label}
-            onClick={() => onNavigate(o.target)}
+            /* las zonas de arriba llevan la cinta debajo, si no se sale de la pantalla */
+            className={`room-obj room-obj-movil ${armado === o.id ? "is-armado" : ""} ${
+              o.top < 30 ? "cinta-abajo" : ""
+            }`}
+            aria-label={armado === o.id ? `Entrar en ${o.label}` : o.label}
+            onClick={() => tocarMovil(o)}
             style={{
               left: `${o.left}%`,
               top: `${o.top}%`,
@@ -137,7 +166,13 @@ export default function ConquestRoom({ onNavigate }: ConquestRoomProps) {
             }}
           >
             <span className="room-obj-glow" />
-            <span className="room-obj-label">{o.label}</span>
+            <span className="room-obj-marca" aria-hidden />
+            {armado === o.id && (
+              <span className="room-obj-cinta">
+                {o.label}
+                <i aria-hidden>Toca otra vez para entrar</i>
+              </span>
+            )}
           </button>
         ))}
 
