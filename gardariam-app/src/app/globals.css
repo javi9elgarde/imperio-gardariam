@@ -1865,17 +1865,23 @@ body {
   inset: 0;
   background: linear-gradient(to top, rgba(18, 12, 4, 0.94) 8%, rgba(18, 12, 4, 0.25) 55%, transparent);
 }
-.exp-hero-subir {
+.exp-hero-acciones {
   position: absolute;
   left: 0.75rem;
   top: 0.75rem;
+  right: 3.2rem; /* deja hueco a la X de cerrar */
   z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.4rem;
 }
 .exp-volver {
-  position: absolute;
-  left: 0.75rem;
-  top: 0.75rem;
-  z-index: 3;
+  flex: 0 0 auto;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-display), serif;
   font-size: 0.58rem;
   text-transform: uppercase;
@@ -1887,10 +1893,6 @@ body {
   padding: 0.45em 0.9em;
   cursor: pointer;
   backdrop-filter: blur(4px);
-}
-/* si el admin ve el boton de subir, el de volver baja para no solaparse */
-.exp-hero-subir ~ .exp-volver {
-  top: 2.7rem;
 }
 .exp-hero-txt {
   position: absolute;

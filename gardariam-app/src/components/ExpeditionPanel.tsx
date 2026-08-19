@@ -92,21 +92,22 @@ export default function ExpeditionPanel({
             )}
             <div className="exp-hero-velo" />
 
-            {onBackToCountry && (
-              <button className="exp-volver" onClick={onBackToCountry}>
-                ← {countryName}
-              </button>
-            )}
-
-            {isAdmin && (
-              <div className="exp-hero-subir">
+{/* Volver y subir portada van en la misma fila: si se colocan por
+                separado se solapan en la esquina. */}
+            <div className="exp-hero-acciones">
+              {onBackToCountry && (
+                <button className="exp-volver" onClick={onBackToCountry}>
+                  ← {countryName}
+                </button>
+              )}
+              {isAdmin && (
                 <PhotoUploader
                   carpeta={`expediciones/${iso}/${visitId}`}
                   etiqueta="Portada"
                   onSubida={(urls) => guardar({ coverPhoto: urls[0] })}
                 />
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="exp-hero-txt">
               <span className="exp-migas">
