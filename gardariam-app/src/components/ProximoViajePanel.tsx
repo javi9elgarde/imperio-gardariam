@@ -218,6 +218,8 @@ function useChecklist(key: string, items: string[]) {
 
 function DayCard({ day }: { day: Day }) {
   const [open, setOpen] = useState(false);
+  const { state: checks, toggle } = useChecklist(`viaje-day-${day.n}`, day.items);
+  const done = day.items.reduce((t, _, i) => t + (checks[i] ? 1 : 0), 0);
   return (
     <div className={`viaje-day viaje-day-zone-${day.zone} ${open ? "is-open" : ""}`}>
       <button type="button" className="viaje-day-head" onClick={() => setOpen((o) => !o)}>
@@ -228,15 +230,26 @@ function DayCard({ day }: { day: Day }) {
             {day.date.toUpperCase()} · {day.country}
           </span>
         </span>
+        <span className="viaje-day-done">{done}/{day.items.length}</span>
         <span className="viaje-day-chev">▸</span>
       </button>
       {open && (
         <div className="viaje-day-body">
-          <ul>
+          <div className="viaje-day-items">
             {day.items.map((it, i) => (
-              <li key={i}>{it}</li>
+              <div className="viaje-check-item" key={i}>
+                <input
+                  type="checkbox"
+                  id={`d${day.n}-${i}`}
+                  checked={!!checks[i]}
+                  onChange={() => toggle(i)}
+                />
+                <label htmlFor={`d${day.n}-${i}`} className={checks[i] ? "is-done" : ""}>
+                  {it}
+                </label>
+              </div>
             ))}
-          </ul>
+          </div>
           {day.transport && <div className="viaje-transport">🚗 {day.transport}</div>}
           {day.places && day.places.length > 0 && (
             <>

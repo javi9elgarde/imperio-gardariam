@@ -2411,6 +2411,18 @@ body {
 .viaje-day-sub { font-size: 0.62rem; color: #6f5c3c; margin-top: 0.1rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .viaje-day-chev { color: #9c6a1e; flex: none; font-size: 0.75rem; transition: transform 0.18s ease; }
 .viaje-day.is-open .viaje-day-chev { transform: rotate(90deg); }
+.viaje-day-done {
+  flex: none;
+  font-size: 0.62rem;
+  font-family: var(--font-display), serif;
+  font-weight: 700;
+  color: #9c6a1e;
+  background: rgba(140, 100, 45, 0.14);
+  border: 1px solid rgba(140, 100, 45, 0.3);
+  border-radius: 999px;
+  padding: 0.15em 0.5em;
+}
+.viaje-day-items { margin: 0.6rem 0; }
 .viaje-day-body { padding: 0 0.85rem 0.8rem; border-top: 1px dashed rgba(140, 100, 45, 0.35); }
 .viaje-day-body ul { margin: 0.6rem 0; padding-left: 1.1rem; }
 .viaje-day-body li { font-size: 0.76rem; line-height: 1.5; margin-bottom: 0.3rem; color: #3a2c1a; }
