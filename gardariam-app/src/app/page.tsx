@@ -8,6 +8,7 @@ import LoadingScreen from "@/components/LoadingScreen";
 import CountryPanel from "@/components/CountryPanel";
 import ExpeditionPanel from "@/components/ExpeditionPanel";
 import MapZone from "@/components/region/MapZone";
+import ProximoViajePanel from "@/components/ProximoViajePanel";
 import FlagRoom from "@/components/sections/FlagRoom";
 import StatsSection from "@/components/sections/StatsSection";
 import Timeline from "@/components/sections/Timeline";
@@ -20,6 +21,7 @@ type View = "sala" | "mapa" | "banderas" | "cronologia" | "estadisticas";
 export default function Home() {
   const { isAdmin, user, loading, signIn, signOutUser } = useAuth();
   const [view, setView] = useState<View>("sala");
+  const [showViaje, setShowViaje] = useState(false);
   const [selected, setSelected] = useState<{ iso: string; name: string } | null>(null);
   /* Expedición abierta. `desdePais` recuerda si se llegó desde la ficha del
      país, para poder volver a ella al cerrar. */
@@ -83,6 +85,11 @@ export default function Home() {
             {user ? (isAdmin ? "⚜ Admin" : "Salir") : "Iniciar sesión"}
           </button>
         )}
+        {!loading && isAdmin && (
+          <button onClick={() => setShowViaje(true)} className="viaje-corner">
+            🧭 Próximo Viaje
+          </button>
+        )}
       </div>
 
       {/* ===== Zona: Mapa ===== */}
@@ -140,6 +147,10 @@ export default function Home() {
             }
           />
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showViaje && isAdmin && <ProximoViajePanel onClose={() => setShowViaje(false)} />}
       </AnimatePresence>
     </div>
   );
