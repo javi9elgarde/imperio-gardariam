@@ -625,10 +625,15 @@ body {
     opacity 0.25s var(--ease-imperial),
     transform 0.25s var(--ease-imperial);
 }
-.room-obj:hover .room-obj-label,
 .room-obj:focus-visible .room-obj-label {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+@media (hover: hover) {
+  .room-obj:hover .room-obj-label {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 /* Pista de scroll */
 .room-hint {
@@ -908,12 +913,26 @@ body {
     filter 0.25s var(--ease-imperial),
     transform 0.25s var(--ease-imperial);
 }
-.emap-country:hover .emap-country-img,
-.emap-country:focus-visible .emap-country-img {
+.emap-country:focus-visible .emap-country-img,
+.emap-country:hover .emap-country-img {
   opacity: 1;
   filter: brightness(1.18) drop-shadow(0 0 8px rgba(240, 197, 66, 0.95))
     drop-shadow(0 0 18px rgba(240, 197, 66, 0.6));
   transform: scale(1.04);
+}
+/* en pantalla táctil solo se resalta el país señalado, no el último tocado */
+@media (hover: none) {
+  .emap-country:hover .emap-country-img {
+    opacity: 0.42;
+    filter: drop-shadow(0 0 5px rgba(240, 197, 66, 0.55));
+    transform: none;
+  }
+  .emap-country.is-armado .emap-country-img {
+    opacity: 1;
+    filter: brightness(1.22) drop-shadow(0 0 10px rgba(240, 197, 66, 1))
+      drop-shadow(0 0 22px rgba(240, 197, 66, 0.7));
+    transform: scale(1.04);
+  }
 }
 .emap-tip {
   position: absolute;
@@ -1328,16 +1347,26 @@ body {
   .room-obj-marca::before { inset: 8px; }
 }
 /* al señalar el objeto, la marca sobra */
-.room-obj:hover .room-obj-marca,
 .room-obj:focus-visible .room-obj-marca,
 .room-obj-movil.is-armado .room-obj-marca {
   opacity: 0;
   animation: none;
   transition: opacity 0.2s ease;
 }
-.room-obj:hover .room-obj-marca::after,
 .room-obj-movil.is-armado .room-obj-marca::after {
   animation: none;
+}
+/* Solo con ratón. En el iPhone, Safari deja el :hover pegado al último
+   elemento tocado, así que el círculo anterior se quedaba invisible. */
+@media (hover: hover) {
+  .room-obj:hover .room-obj-marca {
+    opacity: 0;
+    animation: none;
+    transition: opacity 0.2s ease;
+  }
+  .room-obj:hover .room-obj-marca::after {
+    animation: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .room-obj-marca,
@@ -1345,10 +1374,15 @@ body {
 }
 
 /* --- Móvil: primer toque señala, segundo entra --- */
+/* Capa para deshacer la selección tocando fuera. Va POR DEBAJO de las zonas:
+   si queda por encima se traga el toque en las demás y hay que tocar dos veces. */
 .room-desarmar {
   position: absolute;
   inset: 0;
   z-index: 4;
+}
+.room-obj-movil {
+  z-index: 5;
 }
 .room-obj-movil.is-armado {
   z-index: 6;
@@ -1457,10 +1491,14 @@ body {
 /* ===================================================================
    Mapa: en el móvil el primer toque enseña el país y el segundo lo abre
    =================================================================== */
+/* Igual que en la sala: los países tienen que quedar por encima de esta capa */
 .emap-desarmar {
   position: absolute;
   inset: 0;
   z-index: 1;
+}
+.emap-country {
+  z-index: 2;
 }
 .emap-country.is-armado {
   z-index: 6;
